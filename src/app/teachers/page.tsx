@@ -1,0 +1,1 @@
+import type{Metadata}from"next";import{TeachersPage}from"@/components/teachers-page";export const metadata:Metadata={title:"Teachers",description:"Meet Noon Academy's qualified Quran and Tajweed teachers."};export default function Page(){return <TeachersPage/>}

@@ -1,0 +1,6 @@
+"use client";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { CheckCircle2,Mail,MessageCircle } from "lucide-react";
+import { useLanguage } from "./language-provider";
+export function Confirmation(){const{isArabic}=useLanguage(),params=useSearchParams(),ref=params.get("ref");return <main className="confirmation-page"><div className="confirmation-card"><CheckCircle2/><span>{isArabic?"تم استلام حجزك":"Booking received"}</span><h1>{isArabic?"خطوتك الأولى قد بدأت":"Your first step is complete"}</h1><p>{isArabic?"شكرًا لك. سيراجع فريقنا الحجز ويرسل تفاصيل الحصة إلى بريدك وWhatsApp.":"Thank you. Our team will review your booking and send the lesson details by email and WhatsApp."}</p><div className="reference"><small>{isArabic?"مرجع الحجز":"BOOKING REFERENCE"}</small><strong>{ref||"—"}</strong></div><div className="confirm-notes"><div><Mail/><span>{isArabic?"تحقق من بريدك، بما في ذلك الرسائل غير المرغوبة.":"Check your inbox, including spam or promotions."}</span></div><div><MessageCircle/><span>{isArabic?"تحتاج لتعديل الموعد؟ تواصل معنا عبر WhatsApp.":"Need to change the time? Message us on WhatsApp."}</span></div></div><Link className="button button-primary" href="/">{isArabic?"العودة للرئيسية":"Back to home"}</Link></div></main>}

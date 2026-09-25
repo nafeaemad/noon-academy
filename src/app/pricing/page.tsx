@@ -1,0 +1,1 @@
+import type{Metadata}from"next";import{PricingPage}from"@/components/pricing-page";export const metadata:Metadata={title:"Pricing",description:"Flexible online Quran lesson plans for children and adults."};export default function Page(){return <PricingPage/>}
