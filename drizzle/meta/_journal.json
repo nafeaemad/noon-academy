@@ -8,6 +8,13 @@
       "when": 1790233332279,
       "tag": "0000_melodic_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790387055398,
+      "tag": "0001_handy_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

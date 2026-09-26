@@ -73,6 +73,16 @@ export const contacts = pgTable("contacts", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const settings = pgTable("settings", {
+  id: integer("id").primaryKey().default(1),
+  whatsapp: varchar("whatsapp", { length: 60 }).notNull().default("+1 555 123 4567"),
+  email: varchar("email", { length: 220 }).notNull().default("hello@noonquran.academy"),
+  responseTimeAr: varchar("response_time_ar", { length: 160 }).notNull().default("عادة خلال 24 ساعة"),
+  responseTimeEn: varchar("response_time_en", { length: 160 }).notNull().default("Usually within 24 hours"),
+  facebook: varchar("facebook", { length: 220 }),
+  instagram: varchar("instagram", { length: 220 }),
+});
+
 export const plans = pgTable("plans", {
   id: serial("id").primaryKey(),
   nameAr: varchar("name_ar", { length: 120 }).notNull(),
