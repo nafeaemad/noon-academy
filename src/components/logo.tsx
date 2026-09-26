@@ -6,7 +6,7 @@ export function Logo({ light = false }: { light?: boolean }) {
   const { isArabic } = useLanguage();
   return (
     <span className="logo-wrap" aria-label="Noon Academy">
-      <img src="/logo.svg" alt="Noon Academy" className={`logo-mark ${light ? "logo-light" : ""}`} width={43} height={43} />
+      <img src="/logo.png" alt="Noon Academy" className={`logo-mark ${light ? "logo-light" : ""}`} width={76} height={38} />
       <span>
         {isArabic ? (
           <>
