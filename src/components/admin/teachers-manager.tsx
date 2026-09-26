@@ -16,6 +16,7 @@ type Teacher = {
   yearsExperience: number | null;
   imageUrl: string | null;
   active: boolean;
+  available: boolean;
 };
 
 const empty = {
@@ -29,6 +30,7 @@ const empty = {
   yearsExperience: "",
   imageUrl: "",
   active: true,
+  available: true,
 };
 
 export function TeachersManager() {
@@ -61,6 +63,7 @@ export function TeachersManager() {
       yearsExperience: t.yearsExperience ? String(t.yearsExperience) : "",
       imageUrl: t.imageUrl || "",
       active: t.active,
+      available: t.available,
     });
     setEditingId(t.id);
   }
@@ -153,6 +156,12 @@ export function TeachersManager() {
                   ظاهر في الموقع
                 </label>
               </div>
+              <div className="field">
+                <label className="toggle-row">
+                  <input type="checkbox" checked={form.available} onChange={(e) => setForm({ ...form, available: e.target.checked })} />
+                  متاح لحجز حصص جديدة (ألغِ التفعيل لإظهار &quot;الجدول ممتلئ&quot; في الموقع)
+                </label>
+              </div>
             </div>
             <div className="save-bar">
               <button className="button button-primary" type="submit">حفظ</button>
@@ -172,7 +181,8 @@ export function TeachersManager() {
                   <th>الاسم</th>
                   <th>التخصص</th>
                   <th>الخبرة</th>
-                  <th>الحالة</th>
+                  <th>الظهور</th>
+                  <th>التوفر</th>
                   <th>إجراء</th>
                 </tr>
               </thead>
@@ -185,6 +195,11 @@ export function TeachersManager() {
                     <td>
                       <span className={`pill-status ${t.active ? "pill-approved" : "pill-rejected"}`}>
                         {t.active ? "ظاهر" : "مخفي"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`pill-status ${t.available ? "pill-confirmed" : "pill-pending"}`}>
+                        {t.available ? "متاح" : "الجدول ممتلئ"}
                       </span>
                     </td>
                     <td>

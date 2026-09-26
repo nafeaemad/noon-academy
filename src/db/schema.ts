@@ -31,6 +31,7 @@ export const teachers = pgTable("teachers", {
   yearsExperience: integer("years_experience"),
   imageUrl: text("image_url"),
   active: boolean("active").notNull().default(true),
+  available: boolean("available").notNull().default(true),
 });
 
 export const bookings = pgTable("bookings", {
@@ -71,6 +72,26 @@ export const contacts = pgTable("contacts", {
   email: varchar("email", { length: 220 }).notNull(),
   message: text("message").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 160 }).notNull().unique(),
+  titleAr: varchar("title_ar", { length: 220 }).notNull(),
+  titleEn: varchar("title_en", { length: 220 }).notNull(),
+  excerptAr: varchar("excerpt_ar", { length: 320 }).notNull(),
+  excerptEn: varchar("excerpt_en", { length: 320 }).notNull(),
+  contentAr: text("content_ar").notNull(),
+  contentEn: text("content_en").notNull(),
+  coverImageUrl: varchar("cover_image_url", { length: 500 }),
+  published: boolean("published").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const siteContent = pgTable("site_content", {
+  key: varchar("key", { length: 120 }).primaryKey(),
+  valueAr: text("value_ar").notNull(),
+  valueEn: text("value_en").notNull(),
 });
 
 export const settings = pgTable("settings", {

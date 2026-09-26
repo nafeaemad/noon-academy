@@ -27,6 +27,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       yearsExperience: body.yearsExperience ? Number(body.yearsExperience) : null,
       imageUrl: body.imageUrl || null,
       active: Boolean(body.active),
+      available: body.available !== undefined ? Boolean(body.available) : true,
     })
     .where(eq(teachers.id, Number(id)))
     .returning();

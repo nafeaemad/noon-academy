@@ -17,6 +17,7 @@ export function PricingPage() {
   return (
     <main>
       <PageHero
+        contentKey="pricing-hero"
         label={{ ar: "الأسعار", en: "PRICING" }}
         title={{ ar: "خطط واضحة، دون مفاجآت", en: "Simple plans. Meaningful progress." }}
         description={{

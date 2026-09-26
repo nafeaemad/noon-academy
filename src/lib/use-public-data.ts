@@ -27,6 +27,7 @@ export type DbTeacher = {
   languages: string[];
   yearsExperience: number | null;
   imageUrl: string | null;
+  available: boolean;
 };
 
 export type DbPlan = {

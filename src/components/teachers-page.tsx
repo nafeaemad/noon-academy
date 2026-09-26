@@ -11,6 +11,7 @@ export function TeachersPage() {
   return (
     <main>
       <PageHero
+        contentKey="teachers-hero"
         label={{ ar: "فريق التعليم", en: "OUR TEACHERS" }}
         title={{ ar: "معلمون يجمعون العلم والرفق", en: "Teachers with knowledge and care" }}
         description={{
@@ -34,6 +35,9 @@ export function TeachersPage() {
                         {x.yearsExperience} {isArabic ? "سنوات خبرة" : "years experience"}
                       </span>
                     ) : null}
+                    <span className={`availability-badge ${x.available ? "is-open" : "is-full"}`}>
+                      {x.available ? (isArabic ? "متاح الآن" : "Available now") : (isArabic ? "الجدول ممتلئ" : "Fully booked")}
+                    </span>
                   </div>
                   <div className="teacher-info">
                     <h3>{isArabic ? x.nameAr : x.nameEn}</h3>

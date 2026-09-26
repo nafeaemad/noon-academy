@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       yearsExperience: body.yearsExperience ? Number(body.yearsExperience) : null,
       imageUrl: body.imageUrl || null,
       active: Boolean(body.active),
+      available: body.available !== undefined ? Boolean(body.available) : true,
     })
     .returning();
   return NextResponse.json(row);
