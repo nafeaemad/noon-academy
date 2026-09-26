@@ -32,7 +32,8 @@ export async function POST(req: Request) {
       yearsExperience: body.yearsExperience ? Number(body.yearsExperience) : null,
       imageUrl: body.imageUrl || null,
       active: Boolean(body.active),
-      available: body.available !== undefined ? Boolean(body.available) : true,
+      availabilityAr: body.availabilityAr || "متاح الآن",
+      availabilityEn: body.availabilityEn || "Available now",
     })
     .returning();
   return NextResponse.json(row);

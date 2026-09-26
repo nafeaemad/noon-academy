@@ -1,0 +1,2 @@
+ALTER TABLE "teachers" ADD COLUMN "availability_ar" varchar(160) DEFAULT 'متاح الآن' NOT NULL;--> statement-breakpoint
+ALTER TABLE "teachers" ADD COLUMN "availability_en" varchar(160) DEFAULT 'Available now' NOT NULL;

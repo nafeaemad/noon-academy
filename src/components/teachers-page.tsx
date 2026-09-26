@@ -35,9 +35,7 @@ export function TeachersPage() {
                         {x.yearsExperience} {isArabic ? "سنوات خبرة" : "years experience"}
                       </span>
                     ) : null}
-                    <span className={`availability-badge ${x.available ? "is-open" : "is-full"}`}>
-                      {x.available ? (isArabic ? "متاح الآن" : "Available now") : (isArabic ? "الجدول ممتلئ" : "Fully booked")}
-                    </span>
+                    <span className="availability-badge">{isArabic ? x.availabilityAr : x.availabilityEn}</span>
                   </div>
                   <div className="teacher-info">
                     <h3>{isArabic ? x.nameAr : x.nameEn}</h3>

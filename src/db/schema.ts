@@ -32,6 +32,8 @@ export const teachers = pgTable("teachers", {
   imageUrl: text("image_url"),
   active: boolean("active").notNull().default(true),
   available: boolean("available").notNull().default(true),
+  availabilityAr: varchar("availability_ar", { length: 160 }).notNull().default("متاح الآن"),
+  availabilityEn: varchar("availability_en", { length: 160 }).notNull().default("Available now"),
 });
 
 export const bookings = pgTable("bookings", {

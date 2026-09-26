@@ -16,7 +16,8 @@ type Teacher = {
   yearsExperience: number | null;
   imageUrl: string | null;
   active: boolean;
-  available: boolean;
+  availabilityAr: string;
+  availabilityEn: string;
 };
 
 const empty = {
@@ -30,7 +31,8 @@ const empty = {
   yearsExperience: "",
   imageUrl: "",
   active: true,
-  available: true,
+  availabilityAr: "متاح الآن",
+  availabilityEn: "Available now",
 };
 
 export function TeachersManager() {
@@ -63,7 +65,8 @@ export function TeachersManager() {
       yearsExperience: t.yearsExperience ? String(t.yearsExperience) : "",
       imageUrl: t.imageUrl || "",
       active: t.active,
-      available: t.available,
+      availabilityAr: t.availabilityAr,
+      availabilityEn: t.availabilityEn,
     });
     setEditingId(t.id);
   }
@@ -157,10 +160,20 @@ export function TeachersManager() {
                 </label>
               </div>
               <div className="field">
-                <label className="toggle-row">
-                  <input type="checkbox" checked={form.available} onChange={(e) => setForm({ ...form, available: e.target.checked })} />
-                  متاح لحجز حصص جديدة (ألغِ التفعيل لإظهار &quot;الجدول ممتلئ&quot; في الموقع)
-                </label>
+                <label>حالة التوفر (عربي) — تظهر كشارة على كارت المدرس</label>
+                <input
+                  value={form.availabilityAr}
+                  onChange={(e) => setForm({ ...form, availabilityAr: e.target.value })}
+                  placeholder="متاح الآن / الجدول ممتلئ حتى الأسبوع القادم / متاح من السبت..."
+                />
+              </div>
+              <div className="field">
+                <label>Availability status (English)</label>
+                <input
+                  value={form.availabilityEn}
+                  onChange={(e) => setForm({ ...form, availabilityEn: e.target.value })}
+                  placeholder="Available now / Fully booked until next week..."
+                />
               </div>
             </div>
             <div className="save-bar">
@@ -182,7 +195,7 @@ export function TeachersManager() {
                   <th>التخصص</th>
                   <th>الخبرة</th>
                   <th>الظهور</th>
-                  <th>التوفر</th>
+                  <th>حالة التوفر</th>
                   <th>إجراء</th>
                 </tr>
               </thead>
@@ -198,9 +211,7 @@ export function TeachersManager() {
                       </span>
                     </td>
                     <td>
-                      <span className={`pill-status ${t.available ? "pill-confirmed" : "pill-pending"}`}>
-                        {t.available ? "متاح" : "الجدول ممتلئ"}
-                      </span>
+                      <span className="pill-status pill-confirmed">{t.availabilityAr}</span>
                     </td>
                     <td>
                       <div className="admin-actions">
