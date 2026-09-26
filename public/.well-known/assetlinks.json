@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.noon_academy_silk.twa",
+      "sha256_cert_fingerprints": ["CD:18:80:A6:F7:B8:E5:27:B8:E3:4F:32:8A:41:61:CF:D1:ED:4F:9A:91:81:00:EE:D1:FE:01:34:93:D9:8C:0B"]
+    }
+  }
+]
