@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { count, eq, sql } from "drizzle-orm";
+import { count, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { bookings, reviews } from "@/db/schema";
 import { validToken } from "@/lib/admin-auth";
@@ -23,9 +23,12 @@ export default async function AdminPage() {
   if (!validToken(store.get("noon_admin")?.value)) return <AdminLogin />;
 
   const [[bookingCount], [pendingCount], [studentCount], [lessonCount]] = await Promise.all([
-    db.select({ value: count() }).from(bookings),
+    db.select({ value: count() }).from(bookings).where(ne(bookings.status, "cancelled")),
     db.select({ value: count() }).from(reviews).where(eq(reviews.status, "pending")),
-    db.select({ value: sql<number>`count(distinct ${bookings.email})` }).from(bookings),
+    db
+      .select({ value: sql<number>`count(distinct ${bookings.email})` })
+      .from(bookings)
+      .where(inArray(bookings.status, ["confirmed", "completed"])),
     db.select({ value: count() }).from(bookings).where(eq(bookings.status, "completed")),
   ]);
 

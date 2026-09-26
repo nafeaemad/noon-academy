@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Trash2 } from "lucide-react";
 
 type Booking = {
   id: number;
@@ -47,6 +47,12 @@ export function BookingsManager() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ status }),
     });
+  }
+
+  async function remove(id: number) {
+    if (!confirm("هل تريد حذف هذا الحجز نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.")) return;
+    setRows((prev) => prev?.filter((b) => b.id !== id) ?? prev);
+    await fetch(`/api/admin/bookings/${id}`, { method: "DELETE" });
   }
 
   return (
@@ -101,6 +107,9 @@ export function BookingsManager() {
                           <option value="completed">مكتمل</option>
                           <option value="cancelled">ملغي</option>
                         </select>
+                        <button className="btn-mini danger" onClick={() => remove(b.id)} title="حذف نهائي">
+                          <Trash2 size={12} />
+                        </button>
                       </div>
                     </td>
                   </tr>
