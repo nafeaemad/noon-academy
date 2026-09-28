@@ -28,45 +28,59 @@ export async function getVapidKeys() {
   return { publicKey: saved[0].publicKey, privateKey: saved[0].privateKey };
 }
 
+export type PushResult = {
+  total: number;
+  sent: number;
+  failed: number;
+  errors: { status?: number; message: string }[];
+  error?: string;
+};
+
 /**
  * Sends a notification to every device the admin has enabled notifications on.
  * Never throws: a failed notification must not break a booking or a review.
+ * The returned object explains exactly what happened (used by the test button).
  */
-export async function notifyAdmins(payload: PushPayload) {
+export async function notifyAdmins(payload: PushPayload): Promise<PushResult> {
+  const result: PushResult = { total: 0, sent: 0, failed: 0, errors: [] };
   try {
     const subs = await db.select().from(pushSubscriptions);
-    if (subs.length === 0) return { sent: 0, failed: 0 };
+    result.total = subs.length;
+    if (subs.length === 0) return result;
 
     const { publicKey, privateKey } = await getVapidKeys();
     webpush.setVapidDetails(SUBJECT, publicKey, privateKey);
 
     const message = JSON.stringify(payload);
-    const results = await Promise.allSettled(
+    const settled = await Promise.allSettled(
       subs.map((s) =>
         webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, message, {
           TTL: 60 * 60 * 24,
           urgency: "high",
+          timeout: 10000,
         }),
       ),
     );
 
-    let sent = 0;
-    let failed = 0;
-    for (let i = 0; i < results.length; i++) {
-      const r = results[i];
+    for (let i = 0; i < settled.length; i++) {
+      const r = settled[i];
       if (r.status === "fulfilled") {
-        sent++;
+        result.sent++;
         continue;
       }
-      failed++;
-      const status = (r.reason as { statusCode?: number })?.statusCode;
+      result.failed++;
+      const reason = r.reason as { statusCode?: number; body?: string; message?: string };
+      result.errors.push({
+        status: reason?.statusCode,
+        message: String(reason?.body || reason?.message || "unknown error").slice(0, 200),
+      });
       // 404/410 mean the device unsubscribed or the app was removed: forget it.
-      if (status === 404 || status === 410) {
+      if (reason?.statusCode === 404 || reason?.statusCode === 410) {
         await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, subs[i].endpoint));
       }
     }
-    return { sent, failed };
-  } catch {
-    return { sent: 0, failed: 0 };
+  } catch (e) {
+    result.error = e instanceof Error ? e.message : String(e);
   }
+  return result;
 }
