@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { bookings, reviews } from "@/db/schema";
 import { validToken } from "@/lib/admin-auth";
 import { AdminLogin } from "@/components/admin-login";
+import { PushToggle } from "@/components/admin/push-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ const cards = [
   { title: "إدارة المدرسين", desc: "أضف أو عدّل أو احذف بيانات المدرسين اللي بتظهر في الموقع.", href: "/admin/teachers" },
   { title: "البرامج والخطط والأسعار", desc: "تحكم في البرامج التعليمية وخطط الأسعار.", href: "/admin/programs" },
   { title: "التقييمات والموافقة عليها", desc: "وافق أو ارفض تقييمات الطلاب قبل ظهورها بالموقع.", href: "/admin/reviews" },
+  { title: "رسائل التواصل", desc: "اقرأ الرسائل اللي بيبعتها الزوار من صفحة تواصل معنا.", href: "/admin/messages" },
   { title: "المقالات", desc: "أضف أو عدّل أو احذف مقالات المدونة.", href: "/admin/posts" },
   { title: "محتوى الصفحات", desc: "عدّل نصوص الصفحة الرئيسية وصفحة عن الأكاديمية.", href: "/admin/content" },
   { title: "التواصل والإشعارات", desc: "رقم الواتساب والإيميل ووقت الرد في كل الموقع.", href: "/admin/settings" },
@@ -53,7 +55,8 @@ export default async function AdminPage() {
             </div>
           ))}
         </div>
-        <div className="admin-grid">
+        <PushToggle />
+        <div className="admin-grid" style={{ marginTop: 26 }}>
           {cards.map((c, i) => (
             <Link key={c.href} href={c.href}>
               <article>
