@@ -43,6 +43,13 @@
       "when": 1790570839759,
       "tag": "0005_great_elektra",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790631462763,
+      "tag": "0006_milky_living_mummy",
+      "breakpoints": true
     }
   ]
 }

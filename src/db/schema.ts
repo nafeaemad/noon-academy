@@ -36,8 +36,20 @@ export const teachers = pgTable("teachers", {
   availabilityEn: varchar("availability_en", { length: 160 }).notNull().default("Available now"),
 });
 
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 160 }).notNull(),
+  email: varchar("email", { length: 220 }).notNull().unique(),
+  passwordHash: text("password_hash"),
+  provider: varchar("provider", { length: 20 }).notNull().default("credentials"),
+  googleId: varchar("google_id", { length: 120 }).unique(),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
   reference: varchar("reference", { length: 24 }).notNull().unique(),
   program: varchar("program", { length: 120 }).notNull(),
   level: varchar("level", { length: 80 }).notNull(),
@@ -58,6 +70,7 @@ export const bookings = pgTable("bookings", {
 
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
   firstName: varchar("first_name", { length: 80 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
   program: varchar("program", { length: 120 }).notNull(),
