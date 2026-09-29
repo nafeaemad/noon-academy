@@ -1,7 +1,7 @@
 import webpush from "web-push";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { pushConfig, pushSubscriptions } from "@/db/schema";
+import { pushConfig, pushSubscriptions, userPushSubscriptions } from "@/db/schema";
 
 const SUBJECT = "mailto:nafea123456az@gmail.com";
 
@@ -10,6 +10,14 @@ export type PushPayload = {
   body: string;
   url?: string;
   tag?: string;
+};
+
+export type PushResult = {
+  total: number;
+  sent: number;
+  failed: number;
+  errors: { status?: number; message: string }[];
+  error?: string;
 };
 
 /** Returns the VAPID key pair, creating and saving it the first time it is needed. */
@@ -28,26 +36,14 @@ export async function getVapidKeys() {
   return { publicKey: saved[0].publicKey, privateKey: saved[0].privateKey };
 }
 
-export type PushResult = {
-  total: number;
-  sent: number;
-  failed: number;
-  errors: { status?: number; message: string }[];
-  error?: string;
-};
+type SubRow = { endpoint: string; p256dh: string; auth: string };
 
-/**
- * Sends a notification to every device the admin has enabled notifications on.
- * Never throws: a failed notification must not break a booking or a review.
- * The returned object explains exactly what happened (used by the test button).
- */
-export async function notifyAdmins(payload: PushPayload): Promise<PushResult> {
-  const result: PushResult = { total: 0, sent: 0, failed: 0, errors: [] };
+/** Shared send loop: never throws, reports exactly what happened, forgets dead endpoints. */
+async function sendToSubscriptions(subs: SubRow[], payload: PushPayload, onDead: (endpoint: string) => Promise<void>): Promise<PushResult> {
+  const result: PushResult = { total: subs.length, sent: 0, failed: 0, errors: [] };
+  if (subs.length === 0) return result;
+
   try {
-    const subs = await db.select().from(pushSubscriptions);
-    result.total = subs.length;
-    if (subs.length === 0) return result;
-
     const { publicKey, privateKey } = await getVapidKeys();
     webpush.setVapidDetails(SUBJECT, publicKey, privateKey);
 
@@ -76,11 +72,33 @@ export async function notifyAdmins(payload: PushPayload): Promise<PushResult> {
       });
       // 404/410 mean the device unsubscribed or the app was removed: forget it.
       if (reason?.statusCode === 404 || reason?.statusCode === 410) {
-        await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, subs[i].endpoint));
+        await onDead(subs[i].endpoint);
       }
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e);
   }
   return result;
+}
+
+/**
+ * Sends a notification to every device the admin has enabled notifications on.
+ * Never throws: a failed notification must not break a booking or a review.
+ */
+export async function notifyAdmins(payload: PushPayload): Promise<PushResult> {
+  const subs = await db.select().from(pushSubscriptions);
+  return sendToSubscriptions(subs, payload, (endpoint) =>
+    db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint)).then(() => undefined),
+  );
+}
+
+/**
+ * Sends a notification to every device a specific user (learner/parent) has
+ * enabled chat notifications on. Used when the admin replies in the live chat.
+ */
+export async function notifyUser(userId: number, payload: PushPayload): Promise<PushResult> {
+  const subs = await db.select().from(userPushSubscriptions).where(eq(userPushSubscriptions.userId, userId));
+  return sendToSubscriptions(subs, payload, (endpoint) =>
+    db.delete(userPushSubscriptions).where(eq(userPushSubscriptions.endpoint, endpoint)).then(() => undefined),
+  );
 }

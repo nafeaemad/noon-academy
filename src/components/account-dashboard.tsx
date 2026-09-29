@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LogOut, Calendar } from "lucide-react";
+import { LogOut, Calendar, MessageCircle } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
 
@@ -122,7 +123,11 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
             </div>
           </form>
 
-          <button className="button button-outline" style={{ marginTop: 20 }} onClick={() => signOut({ callbackUrl: "/" })}>
+          <Link href="/account/chat" className="button button-primary" style={{ marginTop: 20 }}>
+            <MessageCircle size={16} /> {isArabic ? "الشات المباشر مع الأكاديمية" : "Live chat with the academy"}
+          </Link>
+
+          <button className="button button-outline" style={{ marginTop: 12 }} onClick={() => signOut({ callbackUrl: "/" })}>
             <LogOut size={16} /> {isArabic ? "تسجيل الخروج" : "Log out"}
           </button>
         </div>
