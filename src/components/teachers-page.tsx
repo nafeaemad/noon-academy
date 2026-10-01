@@ -4,10 +4,12 @@ import { Languages, GraduationCap } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
 import { useTeachers } from "@/lib/use-public-data";
+import { useSiteSettings } from "@/lib/use-site-settings";
 
 export function TeachersPage() {
   const { isArabic } = useLanguage();
   const { data: teachers } = useTeachers();
+  const settings = useSiteSettings();
   return (
     <main>
       <PageHero
@@ -21,7 +23,20 @@ export function TeachersPage() {
       />
       <section className="page-content">
         <div className="container">
-          {teachers.length ? (
+          {!settings.teachersVisible ? (
+            <div className="empty-reviews">
+              <GraduationCap />
+              <h3>{isArabic ? "الصفحة غير متاحة حاليًا" : "This page is currently unavailable"}</h3>
+              <p>
+                {isArabic
+                  ? "يمكنك حجز حصة تجريبية الآن وسيتم تعيين المدرس المناسب لك."
+                  : "You can book a trial lesson now and we'll assign the right teacher for you."}
+              </p>
+              <Link href="/booking" className="button button-primary">
+                {isArabic ? "احجز حصة تجريبية" : "Book a trial lesson"}
+              </Link>
+            </div>
+          ) : teachers.length ? (
             <div className="teacher-grid">
               {teachers.map((x) => (
                 <article className="teacher-card" key={x.id}>

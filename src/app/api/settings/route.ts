@@ -10,6 +10,7 @@ const defaults = {
   responseTimeEn: "Usually within 24 hours",
   facebook: null as string | null,
   instagram: null as string | null,
+  teachersVisible: true,
 };
 
 export async function GET() {

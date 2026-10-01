@@ -154,6 +154,7 @@ export const settings = pgTable("settings", {
   responseTimeEn: varchar("response_time_en", { length: 160 }).notNull().default("Usually within 24 hours"),
   facebook: varchar("facebook", { length: 220 }),
   instagram: varchar("instagram", { length: 220 }),
+  teachersVisible: boolean("teachers_visible").notNull().default(true),
 });
 
 export const plans = pgTable("plans", {

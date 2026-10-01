@@ -13,6 +13,8 @@ type Booking = {
   program: string;
   startsAt: string;
   status: "pending" | "confirmed" | "cancelled" | "completed";
+  teacherNameAr: string | null;
+  teacherNameEn: string | null;
 };
 
 const statusLabelAr: Record<string, string> = { pending: "قيد الانتظار", confirmed: "مؤكد", cancelled: "ملغي", completed: "مكتمل" };
@@ -80,6 +82,7 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
                       <th>{isArabic ? "المرجع" : "Reference"}</th>
                       <th>{isArabic ? "البرنامج" : "Program"}</th>
                       <th>{isArabic ? "الموعد" : "Date"}</th>
+                      <th>{isArabic ? "المدرس" : "Teacher"}</th>
                       <th>{isArabic ? "الحالة" : "Status"}</th>
                     </tr>
                   </thead>
@@ -89,6 +92,7 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
                         <td>{b.reference}</td>
                         <td>{b.program}</td>
                         <td>{new Date(b.startsAt).toLocaleString(isArabic ? "ar-EG" : "en-US")}</td>
+                        <td>{(isArabic ? b.teacherNameAr : b.teacherNameEn) || "—"}</td>
                         <td>
                           <span className={`pill-status pill-${b.status}`}>{isArabic ? statusLabelAr[b.status] : statusLabelEn[b.status]}</span>
                         </td>

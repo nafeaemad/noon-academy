@@ -1,0 +1,1 @@
+ALTER TABLE "settings" ADD COLUMN "teachers_visible" boolean DEFAULT true NOT NULL;

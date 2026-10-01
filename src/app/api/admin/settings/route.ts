@@ -22,6 +22,7 @@ export async function PUT(req: Request) {
     responseTimeEn: body.responseTimeEn || "",
     facebook: body.facebook || null,
     instagram: body.instagram || null,
+    teachersVisible: Boolean(body.teachersVisible),
   };
   const [row] = await db
     .insert(settings)

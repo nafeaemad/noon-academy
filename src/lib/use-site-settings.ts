@@ -9,6 +9,7 @@ export type SiteSettings = {
   responseTimeEn: string;
   facebook?: string | null;
   instagram?: string | null;
+  teachersVisible: boolean;
 };
 
 const defaults: SiteSettings = {
@@ -18,6 +19,7 @@ const defaults: SiteSettings = {
   responseTimeEn: "Usually within 24 hours",
   facebook: null,
   instagram: null,
+  teachersVisible: true,
 };
 
 export function useSiteSettings() {

@@ -7,13 +7,15 @@ import { useSession } from "next-auth/react";
 import { useLanguage } from "./language-provider";
 import { Logo } from "./logo";
 import { t } from "@/lib/content";
+import { useSiteSettings } from "@/lib/use-site-settings";
 
 export function Header() {
   const { locale, setLocale, isArabic } = useLanguage();
   const { data: session, status } = useSession();
+  const settings = useSiteSettings();
   const c = t[locale];
   const [open, setOpen] = useState(false);
-  const links = [["/", c.home], ["/#programs", c.programs], ["/teachers", c.teachers], ["/pricing", c.pricing], ["/about", c.about], ["/reviews", c.reviews], ["/contact", c.contact]];
+  const links = [["/", c.home], ["/#programs", c.programs], ...(settings.teachersVisible ? [["/teachers", c.teachers]] : []), ["/pricing", c.pricing], ["/about", c.about], ["/reviews", c.reviews], ["/contact", c.contact]];
   return <header className="site-header"><div className="nav-shell">
     <Link href="/" className="logo-link"><Logo /></Link>
     <nav className={`main-nav ${open ? "nav-open" : ""}`} aria-label="Main navigation">
