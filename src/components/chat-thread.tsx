@@ -41,6 +41,8 @@ export function ChatThread({ mode, userId, personLabel }: { mode: "user" | "admi
   const [sending, setSending] = useState(false);
   const [pushOffered, setPushOffered] = useState(mode === "user");
   const endRef = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef<number | null>(null);
+  const firstLoadRef = useRef(true);
 
   const listUrl = mode === "user" ? "/api/account/chat" : `/api/admin/chats/${userId}`;
 
@@ -67,7 +69,14 @@ export function ChatThread({ mode, userId, personLabel }: { mode: "user" | "admi
   }, [userId, mode]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages === null) return;
+    const count = messages.length;
+    const isNew = prevCountRef.current === null || count > prevCountRef.current;
+    prevCountRef.current = count;
+    if (!isNew) return;
+    // Jump instantly on first open; smooth-scroll only for messages that arrive after that.
+    endRef.current?.scrollIntoView({ behavior: firstLoadRef.current ? "auto" : "smooth" });
+    firstLoadRef.current = false;
   }, [messages]);
 
   async function submit(e: FormEvent) {

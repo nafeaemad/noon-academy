@@ -39,6 +39,8 @@ export function TeachersManager() {
   const [rows, setRows] = useState<Teacher[] | null>(null);
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [form, setForm] = useState<typeof empty>(empty);
+  const [teachersVisible, setTeachersVisible] = useState<boolean | null>(null);
+  const [savingVisibility, setSavingVisibility] = useState(false);
 
   function load() {
     fetch("/api/admin/teachers")
@@ -46,7 +48,29 @@ export function TeachersManager() {
       .then(setRows);
   }
 
+  function loadSettings() {
+    fetch("/api/admin/settings")
+      .then((r) => r.json())
+      .then((data) => setTeachersVisible(data ? Boolean(data.teachersVisible) : true));
+  }
+
   useEffect(load, []);
+  useEffect(loadSettings, []);
+
+  async function toggleVisibility(next: boolean) {
+    setSavingVisibility(true);
+    setTeachersVisible(next);
+    try {
+      const current = await fetch("/api/admin/settings").then((r) => r.json());
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...current, teachersVisible: next }),
+      });
+    } finally {
+      setSavingVisibility(false);
+    }
+  }
 
   function startNew() {
     setForm(empty);
@@ -107,6 +131,28 @@ export function TeachersManager() {
             </button>
           )}
         </div>
+
+        {teachersVisible !== null && (
+          <div className="admin-panel" style={{ marginBottom: 20 }}>
+            <div className="admin-toolbar" style={{ marginBottom: 0 }}>
+              <div>
+                <strong style={{ fontSize: 15 }}>إظهار صفحة المدرسين في الموقع</strong>
+                <p style={{ margin: "6px 0 0", fontSize: 12 }}>
+                  لما تكون متوقفة، هتختفي صفحة &quot;المدرسون&quot; وقسمهم من الصفحة الرئيسية من الموقع العام، لكن تقدر لسه تضيف وتعدّل مدرسين من هنا عادي.
+                </p>
+              </div>
+              <label className="toggle-row" style={{ flex: "0 0 auto" }}>
+                <input
+                  type="checkbox"
+                  checked={teachersVisible}
+                  disabled={savingVisibility}
+                  onChange={(e) => toggleVisibility(e.target.checked)}
+                />
+                {teachersVisible ? "ظاهرة" : "مخفية"}
+              </label>
+            </div>
+          </div>
+        )}
 
         {editingId !== null && (
           <form className="admin-panel" onSubmit={submit}>

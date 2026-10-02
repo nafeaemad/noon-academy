@@ -66,34 +66,7 @@ export function SettingsManager() {
         {loading ? (
           <div className="admin-empty">جاري التحميل...</div>
         ) : (
-          <>
-          <div className="admin-panel" style={{ marginTop: 28 }}>
-            <div className="admin-toolbar" style={{ marginBottom: 0 }}>
-              <div>
-                <strong style={{ fontSize: 15 }}>إظهار صفحة المدرسين</strong>
-                <p style={{ margin: "6px 0 0", fontSize: 12 }}>
-                  لما تكون متوقفة، هتختفي صفحة &quot;المدرسون&quot; وقسمهم من الصفحة الرئيسية من الموقع، وهتظهر تاني بمجرد ما تفعّلها.
-                </p>
-              </div>
-              <label className="toggle-row" style={{ flex: "0 0 auto" }}>
-                <input
-                  type="checkbox"
-                  checked={form.teachersVisible}
-                  onChange={async (e) => {
-                    const teachersVisible = e.target.checked;
-                    update("teachersVisible", teachersVisible);
-                    await fetch("/api/admin/settings", {
-                      method: "PUT",
-                      headers: { "content-type": "application/json" },
-                      body: JSON.stringify({ ...form, teachersVisible }),
-                    });
-                  }}
-                />
-                {form.teachersVisible ? "ظاهرة" : "مخفية"}
-              </label>
-            </div>
-          </div>
-          <form className="admin-panel" onSubmit={submit} style={{ marginTop: 20 }}>
+          <form className="admin-panel" onSubmit={submit} style={{ marginTop: 28 }}>
             <div className="form-grid">
               <div className="field">
                 <label>رقم الواتساب (بالصيغة الدولية، مثال: +20 100 123 4567)</label>
@@ -153,7 +126,6 @@ export function SettingsManager() {
               {status && <span className="status-message success" style={{ margin: 0 }}>{status}</span>}
             </div>
           </form>
-          </>
         )}
       </div>
     </main>
