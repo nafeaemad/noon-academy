@@ -64,6 +64,13 @@
       "when": 1790724997285,
       "tag": "0008_new_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791491499282,
+      "tag": "0009_windy_starbolt",
+      "breakpoints": true
     }
   ]
 }

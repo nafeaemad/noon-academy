@@ -15,6 +15,7 @@ export async function GET() {
       email: users.email,
       provider: users.provider,
       createdAt: users.createdAt,
+      lessonBalance: users.lessonBalance,
       bookingCount: sql<number>`count(${bookings.id})`,
     })
     .from(users)

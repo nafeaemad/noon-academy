@@ -29,10 +29,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       active: Boolean(body.active),
       availabilityAr: body.availabilityAr || "متاح الآن",
       availabilityEn: body.availabilityEn || "Available now",
+      email: body.email ? String(body.email).trim().toLowerCase() : null,
+      meetingLink: body.meetingLink || null,
+      ratePerLesson: body.ratePerLesson != null ? String(body.ratePerLesson) : "0",
+      excused: Boolean(body.excused),
+      excuseReason: body.excused ? body.excuseReason || null : null,
     })
     .where(eq(teachers.id, Number(id)))
     .returning();
-  return NextResponse.json(row);
+  const { passwordHash: _passwordHash, ...safe } = row;
+  return NextResponse.json(safe);
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {

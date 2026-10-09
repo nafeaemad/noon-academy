@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LogOut, Calendar, MessageCircle } from "lucide-react";
+import { LogOut, Calendar, MessageCircle, Video, GraduationCap } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
 
@@ -15,6 +15,7 @@ type Booking = {
   status: "pending" | "confirmed" | "cancelled" | "completed";
   teacherNameAr: string | null;
   teacherNameEn: string | null;
+  meetingLink: string | null;
 };
 
 const statusLabelAr: Record<string, string> = { pending: "قيد الانتظار", confirmed: "مؤكد", cancelled: "ملغي", completed: "مكتمل" };
@@ -23,6 +24,7 @@ const statusLabelEn: Record<string, string> = { pending: "Pending", confirmed: "
 export function AccountDashboard({ user }: { user: { name: string; email: string } }) {
   const { isArabic } = useLanguage();
   const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [lessonBalance, setLessonBalance] = useState<number | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -31,7 +33,10 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
   useEffect(() => {
     fetch("/api/account/bookings")
       .then((r) => r.json())
-      .then((rows) => setBookings(Array.isArray(rows) ? rows : []));
+      .then((data) => {
+        setBookings(Array.isArray(data?.bookings) ? data.bookings : []);
+        setLessonBalance(typeof data?.lessonBalance === "number" ? data.lessonBalance : 0);
+      });
   }, []);
 
   async function changePassword(e: FormEvent) {
@@ -63,6 +68,17 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
       />
       <section className="page-content">
         <div className="container" style={{ maxWidth: 640 }}>
+          {lessonBalance !== null && (
+            <div className="admin-panel" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <GraduationCap size={28} color="var(--green)" />
+              <div>
+                <strong style={{ fontSize: 22 }}>{lessonBalance}</strong>
+                <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--muted)" }}>
+                  {isArabic ? "رصيدك من الحصص المتبقية" : "Your remaining lesson balance"}
+                </p>
+              </div>
+            </div>
+          )}
           <div className="admin-panel">
             <div className="admin-toolbar" style={{ marginBottom: 10 }}>
               <strong style={{ fontSize: 15 }}>
@@ -84,6 +100,7 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
                       <th>{isArabic ? "الموعد" : "Date"}</th>
                       <th>{isArabic ? "المدرس" : "Teacher"}</th>
                       <th>{isArabic ? "الحالة" : "Status"}</th>
+                      <th>{isArabic ? "الحصة" : "Join"}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -95,6 +112,15 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
                         <td>{(isArabic ? b.teacherNameAr : b.teacherNameEn) || "—"}</td>
                         <td>
                           <span className={`pill-status pill-${b.status}`}>{isArabic ? statusLabelAr[b.status] : statusLabelEn[b.status]}</span>
+                        </td>
+                        <td>
+                          {b.status === "confirmed" && b.meetingLink ? (
+                            <a href={b.meetingLink} target="_blank" rel="noreferrer" className="text-link">
+                              <Video size={14} /> {isArabic ? "دخول الحصة" : "Join"}
+                            </a>
+                          ) : (
+                            "—"
+                          )}
                         </td>
                       </tr>
                     ))}

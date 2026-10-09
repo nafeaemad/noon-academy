@@ -34,6 +34,15 @@ export const teachers = pgTable("teachers", {
   available: boolean("available").notNull().default(true),
   availabilityAr: varchar("availability_ar", { length: 160 }).notNull().default("متاح الآن"),
   availabilityEn: varchar("availability_en", { length: 160 }).notNull().default("Available now"),
+  // Teacher portal: self-service login + payroll
+  email: varchar("email", { length: 220 }).unique(),
+  passwordHash: text("password_hash"),
+  approved: boolean("approved").notNull().default(true),
+  meetingLink: text("meeting_link"),
+  excused: boolean("excused").notNull().default(false),
+  excuseReason: text("excuse_reason"),
+  ratePerLesson: numeric("rate_per_lesson", { precision: 10, scale: 2 }).notNull().default("0"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const users = pgTable("users", {
@@ -45,6 +54,7 @@ export const users = pgTable("users", {
   googleId: varchar("google_id", { length: 120 }).unique(),
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lessonBalance: integer("lesson_balance").notNull().default(0),
 });
 
 export const bookings = pgTable("bookings", {
@@ -66,6 +76,7 @@ export const bookings = pgTable("bookings", {
   notes: text("notes"),
   status: bookingStatus("status").notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  creditedAt: timestamp("credited_at", { withTimezone: true }),
 }, (table) => [uniqueIndex("booking_slot_unique").on(table.startsAt)]);
 
 export const reviews = pgTable("reviews", {
@@ -166,4 +177,41 @@ export const plans = pgTable("plans", {
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 8 }).notNull().default("USD"),
   active: boolean("active").notNull().default(true),
+});
+
+// Teacher payroll ledger: one row per credit (completed lesson) or payout (admin paid the teacher).
+export const teacherLedger = pgTable("teacher_ledger", {
+  id: serial("id").primaryKey(),
+  teacherId: integer("teacher_id")
+    .notNull()
+    .references(() => teachers.id, { onDelete: "cascade" }),
+  bookingId: integer("booking_id").references(() => bookings.id, { onDelete: "set null" }),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  type: varchar("type", { length: 20 }).notNull().default("credit"), // credit | payout | adjustment
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Daily attendance / absence log per teacher.
+export const teacherAttendance = pgTable("teacher_attendance", {
+  id: serial("id").primaryKey(),
+  teacherId: integer("teacher_id")
+    .notNull()
+    .references(() => teachers.id, { onDelete: "cascade" }),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  status: varchar("status", { length: 12 }).notNull().default("present"), // present | absent | excused
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [uniqueIndex("teacher_attendance_day_unique").on(table.teacherId, table.date)]);
+
+// Student lesson-balance audit log (purchases, admin adjustments, consumption on completed lessons).
+export const lessonTransactions = pgTable("lesson_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  delta: integer("delta").notNull(),
+  reason: varchar("reason", { length: 160 }).notNull(),
+  bookingId: integer("booking_id").references(() => bookings.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

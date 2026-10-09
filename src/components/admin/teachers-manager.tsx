@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowRight, Plus, Pencil, Trash2, X } from "lucide-react";
+import { ArrowRight, Plus, Pencil, Trash2, X, CheckCircle2, KeyRound, Wallet } from "lucide-react";
 
 type Teacher = {
   id: number;
@@ -18,6 +18,12 @@ type Teacher = {
   active: boolean;
   availabilityAr: string;
   availabilityEn: string;
+  email: string | null;
+  approved: boolean;
+  meetingLink: string | null;
+  excused: boolean;
+  excuseReason: string | null;
+  ratePerLesson: string;
 };
 
 const empty = {
@@ -33,6 +39,10 @@ const empty = {
   active: true,
   availabilityAr: "متاح الآن",
   availabilityEn: "Available now",
+  email: "",
+  meetingLink: "",
+  ratePerLesson: "0",
+  excused: false,
 };
 
 export function TeachersManager() {
@@ -91,8 +101,29 @@ export function TeachersManager() {
       active: t.active,
       availabilityAr: t.availabilityAr,
       availabilityEn: t.availabilityEn,
+      email: t.email || "",
+      meetingLink: t.meetingLink || "",
+      ratePerLesson: t.ratePerLesson || "0",
+      excused: t.excused,
     });
     setEditingId(t.id);
+  }
+
+  async function approve(id: number) {
+    await fetch(`/api/admin/teachers/${id}/approve`, { method: "POST" });
+    load();
+  }
+
+  async function resetPassword(id: number) {
+    const password = prompt("كلمة المرور الجديدة للمدرس (6 أحرف على الأقل):");
+    if (!password) return;
+    const res = await fetch(`/api/admin/teachers/${id}/reset-password`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (res.ok) alert("تم تغيير كلمة المرور ✓");
+    else alert("حدث خطأ");
   }
 
   async function submit(e: FormEvent) {
@@ -200,9 +231,27 @@ export function TeachersManager() {
                 <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." />
               </div>
               <div className="field">
+                <label>البريد الإلكتروني (لتسجيل دخول المدرس)</label>
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>سعر الحصة الواحدة (قبض)</label>
+                <input type="number" step="0.01" value={form.ratePerLesson} onChange={(e) => setForm({ ...form, ratePerLesson: e.target.value })} />
+              </div>
+              <div className="field full">
+                <label>لينك الزوم / جوجل ميت الثابت بتاع المدرس</label>
+                <input value={form.meetingLink} onChange={(e) => setForm({ ...form, meetingLink: e.target.value })} placeholder="https://..." />
+              </div>
+              <div className="field">
                 <label className="toggle-row">
                   <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
                   ظاهر في الموقع
+                </label>
+              </div>
+              <div className="field">
+                <label className="toggle-row">
+                  <input type="checkbox" checked={form.excused} onChange={(e) => setForm({ ...form, excused: e.target.checked })} />
+                  معتذر حاليًا
                 </label>
               </div>
               <div className="field">
@@ -239,7 +288,8 @@ export function TeachersManager() {
                 <tr>
                   <th>الاسم</th>
                   <th>التخصص</th>
-                  <th>الخبرة</th>
+                  <th>البريد</th>
+                  <th>الحساب</th>
                   <th>الظهور</th>
                   <th>حالة التوفر</th>
                   <th>إجراء</th>
@@ -250,17 +300,39 @@ export function TeachersManager() {
                   <tr key={t.id}>
                     <td>{t.nameAr}</td>
                     <td>{t.specialtyAr}</td>
-                    <td>{t.yearsExperience ?? "—"}</td>
+                    <td>{t.email || "—"}</td>
+                    <td>
+                      {t.email ? (
+                        <span className={`pill-status ${t.approved ? "pill-approved" : "pill-pending"}`}>
+                          {t.approved ? "مفعّل" : "بانتظار الموافقة"}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td>
                       <span className={`pill-status ${t.active ? "pill-approved" : "pill-rejected"}`}>
                         {t.active ? "ظاهر" : "مخفي"}
                       </span>
                     </td>
                     <td>
-                      <span className="pill-status pill-confirmed">{t.availabilityAr}</span>
+                      <span className="pill-status pill-confirmed">{t.excused ? "معتذر" : t.availabilityAr}</span>
                     </td>
                     <td>
                       <div className="admin-actions">
+                        {t.email && !t.approved && (
+                          <button className="btn-mini primary" onClick={() => approve(t.id)} title="الموافقة على الحساب">
+                            <CheckCircle2 size={12} />
+                          </button>
+                        )}
+                        <Link className="btn-mini" href={`/admin/teachers/${t.id}`} title="القبض والحضور">
+                          <Wallet size={12} />
+                        </Link>
+                        {t.email && (
+                          <button className="btn-mini" onClick={() => resetPassword(t.id)} title="تغيير كلمة المرور">
+                            <KeyRound size={12} />
+                          </button>
+                        )}
                         <button className="btn-mini" onClick={() => startEdit(t)}>
                           <Pencil size={12} />
                         </button>

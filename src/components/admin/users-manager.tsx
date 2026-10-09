@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Trash2, KeyRound, X } from "lucide-react";
+import { ArrowRight, Trash2, KeyRound, X, GraduationCap } from "lucide-react";
 
 type User = {
   id: number;
@@ -11,6 +11,7 @@ type User = {
   provider: string;
   createdAt: string;
   bookingCount: number;
+  lessonBalance: number;
 };
 
 const providerLabel: Record<string, string> = {
@@ -41,6 +42,27 @@ export function UsersManager() {
     setResettingId(id);
     setNewPassword("");
     setStatus("");
+  }
+
+  async function adjustLessons(u: User) {
+    const input = prompt(`رصيد ${u.name} الحالي: ${u.lessonBalance} حصة.\nاكتب عدد الحصص المراد إضافتها (أو بالسالب للخصم):`, "4");
+    if (!input) return;
+    const delta = Number(input);
+    if (!delta || !Number.isFinite(delta)) {
+      alert("رقم غير صحيح.");
+      return;
+    }
+    const res = await fetch(`/api/admin/users/${u.id}/lessons`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ delta }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "حدث خطأ");
+      return;
+    }
+    setRows((prev) => prev?.map((row) => (row.id === u.id ? { ...row, lessonBalance: data.lessonBalance } : row)) ?? prev);
   }
 
   async function submitReset() {
@@ -110,6 +132,7 @@ export function UsersManager() {
                   <th>البريد الإلكتروني</th>
                   <th>طريقة التسجيل</th>
                   <th>عدد الحجوزات</th>
+                  <th>رصيد الحصص</th>
                   <th>تاريخ التسجيل</th>
                   <th>إجراء</th>
                 </tr>
@@ -121,9 +144,13 @@ export function UsersManager() {
                     <td>{u.email}</td>
                     <td>{providerLabel[u.provider] || u.provider}</td>
                     <td>{u.bookingCount}</td>
+                    <td>{u.lessonBalance}</td>
                     <td>{new Date(u.createdAt).toLocaleDateString("ar-EG")}</td>
                     <td>
                       <div className="admin-actions">
+                        <button className="btn-mini" onClick={() => adjustLessons(u)} title="إضافة أو خصم رصيد حصص">
+                          <GraduationCap size={12} />
+                        </button>
                         {u.provider === "credentials" && (
                           <button className="btn-mini" onClick={() => startReset(u.id)} title="تغيير كلمة المرور">
                             <KeyRound size={12} />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Trash2, Reply, X, Send } from "lucide-react";
+import { ArrowRight, Trash2, Reply, X, Send, Wallet } from "lucide-react";
 
 type Booking = {
   id: number;
@@ -22,9 +22,10 @@ type Booking = {
   notes: string | null;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   createdAt: string;
+  creditedAt: string | null;
 };
 
-type Teacher = { id: number; nameAr: string; nameEn: string };
+type Teacher = { id: number; nameAr: string; nameEn: string; meetingLink: string | null };
 
 const statusLabels: Record<string, string> = {
   pending: "قيد الانتظار",
@@ -33,9 +34,12 @@ const statusLabels: Record<string, string> = {
   completed: "مكتمل",
 };
 
-function defaultMessage(status: string, booking: Booking, teacherName: string) {
+function defaultMessage(status: string, booking: Booking, teacherName: string, meetingLink?: string) {
   const date = new Date(booking.startsAt).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" });
   if (status === "confirmed") {
+    if (teacherName && meetingLink) {
+      return `تم تأكيد حجزك يوم ${date}. المدرس المسؤول عن حصتك: ${teacherName}. رابط الدخول للحصة: ${meetingLink}`;
+    }
     return teacherName
       ? `تم تأكيد حجزك يوم ${date}. المدرس المسؤول عن حصتك: ${teacherName}. هنتواصل معك بتفاصيل الدخول للحصة قبل الموعد.`
       : `تم تأكيد حجزك يوم ${date}. هنتواصل معك بتفاصيل الدخول للحصة قبل الموعد.`;
@@ -77,22 +81,29 @@ export function BookingsManager() {
     return t ? t.nameAr : "";
   }
 
+  function teacherLink(id: number | null) {
+    const t = teachers.find((x) => x.id === id);
+    return t?.meetingLink || undefined;
+  }
+
   function openReply(b: Booking) {
     setReplyingId(b.id);
     setReplyStatus(b.status === "pending" ? "confirmed" : b.status);
     setReplyTeacher(b.teacherId ? String(b.teacherId) : "");
-    setReplyMessage(defaultMessage(b.status === "pending" ? "confirmed" : b.status, b, teacherName(b.teacherId)));
+    setReplyMessage(defaultMessage(b.status === "pending" ? "confirmed" : b.status, b, teacherName(b.teacherId), teacherLink(b.teacherId)));
     setNote("");
   }
 
   function onStatusChange(status: string, booking: Booking) {
     setReplyStatus(status);
-    setReplyMessage(defaultMessage(status, booking, teacherName(replyTeacher ? Number(replyTeacher) : null)));
+    const tid = replyTeacher ? Number(replyTeacher) : null;
+    setReplyMessage(defaultMessage(status, booking, teacherName(tid), teacherLink(tid)));
   }
 
   function onTeacherChange(teacherId: string, booking: Booking) {
     setReplyTeacher(teacherId);
-    setReplyMessage(defaultMessage(replyStatus, booking, teacherName(teacherId ? Number(teacherId) : null)));
+    const tid = teacherId ? Number(teacherId) : null;
+    setReplyMessage(defaultMessage(replyStatus, booking, teacherName(tid), teacherLink(tid)));
   }
 
   async function sendReply(booking: Booking) {
@@ -121,6 +132,18 @@ export function BookingsManager() {
     if (!confirm("هل تريد حذف هذا الحجز نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.")) return;
     setRows((prev) => prev?.filter((b) => b.id !== id) ?? prev);
     await fetch(`/api/admin/bookings/${id}`, { method: "DELETE" });
+  }
+
+  async function completeLesson(b: Booking) {
+    if (!confirm(`تأكيد إن الحصة اتاخدت؟ هيتم قبض سعر الحصة للمدرس وخصم حصة من رصيد الطالب (${b.name}).`)) return;
+    const res = await fetch(`/api/admin/bookings/${b.id}/complete-lesson`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "حدث خطأ");
+      return;
+    }
+    setRows((prev) => prev?.map((row) => (row.id === b.id ? { ...row, status: "completed", creditedAt: new Date().toISOString() } : row)) ?? prev);
+    alert(data.debited ? "تم تسجيل القبض وخصم حصة من رصيد الطالب ✓" : "تم تسجيل القبض للمدرس (الطالب بدون حساب فمفيش رصيد نخصم منه).");
   }
 
   const replyingBooking = rows?.find((b) => b.id === replyingId) || null;
@@ -225,6 +248,12 @@ export function BookingsManager() {
                         <button className="btn-mini primary" onClick={() => openReply(b)} title="رد على الحجز">
                           <Reply size={12} />
                         </button>
+                        {b.teacherId && !b.creditedAt && (
+                          <button className="btn-mini" onClick={() => completeLesson(b)} title="تسجيل الحصة كمكتملة (قبض + خصم رصيد)">
+                            <Wallet size={12} />
+                          </button>
+                        )}
+                        {b.creditedAt && <span className="pill-status pill-approved">تم القبض ✓</span>}
                         <button className="btn-mini danger" onClick={() => remove(b.id)} title="حذف نهائي">
                           <Trash2 size={12} />
                         </button>

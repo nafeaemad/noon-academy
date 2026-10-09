@@ -7,7 +7,7 @@ export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
   const rows = await db.select().from(teachers);
-  return NextResponse.json(rows);
+  return NextResponse.json(rows.map(({ passwordHash: _passwordHash, ...rest }) => rest));
 }
 
 export async function POST(req: Request) {
@@ -34,6 +34,10 @@ export async function POST(req: Request) {
       active: Boolean(body.active),
       availabilityAr: body.availabilityAr || "متاح الآن",
       availabilityEn: body.availabilityEn || "Available now",
+      email: body.email ? String(body.email).trim().toLowerCase() : null,
+      meetingLink: body.meetingLink || null,
+      ratePerLesson: body.ratePerLesson != null ? String(body.ratePerLesson) : "0",
+      approved: true,
     })
     .returning();
   return NextResponse.json(row);
