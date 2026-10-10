@@ -15,6 +15,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "كلمة المرور لازم تكون 6 أحرف على الأقل." }, { status: 400 });
   }
 
+  const [existing] = await db.select({ passwordHash: teachers.passwordHash }).from(teachers).where(eq(teachers.id, Number(id)));
+  if (body.email && !body.password && !existing?.passwordHash) {
+    return NextResponse.json({ error: "لازم تحط كلمة مرور للمدرس عشان يقدر يدخل على حسابه." }, { status: 400 });
+  }
+
   const update: Partial<typeof teachers.$inferInsert> = {
     nameAr: body.nameAr,
     nameEn: body.nameEn,

@@ -52,6 +52,8 @@ export function TeachersManager() {
   const [rows, setRows] = useState<Teacher[] | null>(null);
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [form, setForm] = useState<typeof empty>(empty);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [teachersVisible, setTeachersVisible] = useState<boolean | null>(null);
   const [savingVisibility, setSavingVisibility] = useState(false);
 
@@ -87,10 +89,12 @@ export function TeachersManager() {
 
   function startNew() {
     setForm(empty);
+    setFormError("");
     setEditingId("new");
   }
 
   function startEdit(t: Teacher) {
+    setFormError("");
     setForm({
       nameAr: t.nameAr,
       nameEn: t.nameEn,
@@ -133,15 +137,26 @@ export function TeachersManager() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const method = editingId === "new" ? "POST" : "PATCH";
-    const url = editingId === "new" ? "/api/admin/teachers" : `/api/admin/teachers/${editingId}`;
-    await fetch(url, {
-      method,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setEditingId(null);
-    load();
+    setFormError("");
+    setSaving(true);
+    try {
+      const method = editingId === "new" ? "POST" : "PATCH";
+      const url = editingId === "new" ? "/api/admin/teachers" : `/api/admin/teachers/${editingId}`;
+      const res = await fetch(url, {
+        method,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFormError(data.error || "حدث خطأ أثناء الحفظ.");
+        return;
+      }
+      setEditingId(null);
+      load();
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove(id: number) {
@@ -284,8 +299,11 @@ export function TeachersManager() {
                 />
               </div>
             </div>
+            {formError && <div className="status-message error">{formError}</div>}
             <div className="save-bar">
-              <button className="button button-primary" type="submit">حفظ</button>
+              <button className="button button-primary" type="submit" disabled={saving}>
+                {saving ? "جاري الحفظ..." : "حفظ"}
+              </button>
             </div>
           </form>
         )}
