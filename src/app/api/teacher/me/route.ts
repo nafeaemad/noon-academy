@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { teacherLedger, teachers } from "@/db/schema";
 import { requireTeacher } from "@/lib/require-teacher";
@@ -36,6 +36,21 @@ export async function PATCH(req: Request) {
   if (typeof body.yearsExperience !== "undefined") update.yearsExperience = body.yearsExperience ? Number(body.yearsExperience) : null;
   if (typeof body.imageUrl === "string") update.imageUrl = body.imageUrl.trim() || null;
   if (Array.isArray(body.languages)) update.languages = body.languages;
+  if (typeof body.phone === "string") update.phone = body.phone.trim() || null;
+
+  if (typeof body.email === "string" && body.email.trim()) {
+    const email = body.email.trim().toLowerCase();
+    if (email !== teacher.email) {
+      const [existing] = await db
+        .select({ id: teachers.id })
+        .from(teachers)
+        .where(and(eq(teachers.email, email), ne(teachers.id, teacher.id)));
+      if (existing) {
+        return NextResponse.json({ error: "البريد الإلكتروني ده مستخدم بالفعل." }, { status: 409 });
+      }
+      update.email = email;
+    }
+  }
 
   if (typeof body.excused === "boolean") {
     update.excused = body.excused;

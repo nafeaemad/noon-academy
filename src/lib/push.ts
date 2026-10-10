@@ -1,7 +1,7 @@
 import webpush from "web-push";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { pushConfig, pushSubscriptions, userPushSubscriptions } from "@/db/schema";
+import { pushConfig, pushSubscriptions, userPushSubscriptions, teacherPushSubscriptions } from "@/db/schema";
 
 const SUBJECT = "mailto:nafea123456az@gmail.com";
 
@@ -100,5 +100,12 @@ export async function notifyUser(userId: number, payload: PushPayload): Promise<
   const subs = await db.select().from(userPushSubscriptions).where(eq(userPushSubscriptions.userId, userId));
   return sendToSubscriptions(subs, payload, (endpoint) =>
     db.delete(userPushSubscriptions).where(eq(userPushSubscriptions.endpoint, endpoint)).then(() => undefined),
+  );
+}
+
+export async function notifyTeacher(teacherId: number, payload: PushPayload): Promise<PushResult> {
+  const subs = await db.select().from(teacherPushSubscriptions).where(eq(teacherPushSubscriptions.teacherId, teacherId));
+  return sendToSubscriptions(subs, payload, (endpoint) =>
+    db.delete(teacherPushSubscriptions).where(eq(teacherPushSubscriptions.endpoint, endpoint)).then(() => undefined),
   );
 }

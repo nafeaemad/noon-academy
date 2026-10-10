@@ -3,6 +3,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { users, lessonTransactions } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
+import { notifyUser } from "@/lib/push";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireAdmin();
@@ -37,6 +38,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .returning();
 
   await db.insert(lessonTransactions).values({ userId: Number(id), delta, reason });
+
+  await notifyUser(Number(id), {
+    title: delta > 0 ? "تم إضافة رصيد حصص لحسابك 🎉" : "تم تعديل رصيد حصصك",
+    body: `${reason} — رصيدك الحالي: ${updated.lessonBalance} حصة.`,
+    url: "/account",
+    tag: `lesson-balance-${id}`,
+  });
 
   return NextResponse.json({ lessonBalance: updated.lessonBalance });
 }

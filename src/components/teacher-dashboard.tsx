@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Save, Video, CalendarCheck, Wallet, Ban } from "lucide-react";
+import { LogOut, Save, Video, CalendarCheck, Wallet, Ban, User, Printer, Send } from "lucide-react";
+import { TeacherPushOptIn } from "./teacher-push-optin";
 
 type Teacher = {
   id: number;
@@ -10,6 +11,8 @@ type Teacher = {
   nameEn: string;
   specialtyAr: string;
   qualificationsAr: string;
+  email: string | null;
+  phone: string | null;
   meetingLink: string | null;
   excused: boolean;
   excuseReason: string | null;
@@ -30,6 +33,15 @@ type Booking = {
 
 type Attendance = { id: number; date: string; status: string; note: string | null };
 type LedgerRow = { id: number; amount: string; type: string; note: string | null; createdAt: string };
+type RequestRow = {
+  id: number;
+  type: "leave" | "cancel_lesson";
+  bookingId: number | null;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  adminNote: string | null;
+  createdAt: string;
+};
 
 const statusLabels: Record<string, string> = {
   pending: "قيد الانتظار",
@@ -38,17 +50,34 @@ const statusLabels: Record<string, string> = {
   completed: "مكتمل",
 };
 
+const requestTypeLabels: Record<string, string> = { leave: "طلب إجازة / اعتذار", cancel_lesson: "طلب إلغاء حصة" };
+const requestStatusLabels: Record<string, string> = { pending: "قيد المراجعة", approved: "تمت الموافقة", rejected: "مرفوض" };
+
 export function TeacherDashboard() {
   const router = useRouter();
   const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [ledger, setLedger] = useState<LedgerRow[]>([]);
+  const [requests, setRequests] = useState<RequestRow[]>([]);
+
   const [meetingLink, setMeetingLink] = useState("");
   const [excused, setExcused] = useState(false);
   const [excuseReason, setExcuseReason] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [pwStatus, setPwStatus] = useState("");
+  const [pwError, setPwError] = useState("");
+
+  const [reqType, setReqType] = useState<"leave" | "cancel_lesson">("leave");
+  const [reqBookingId, setReqBookingId] = useState("");
+  const [reqReason, setReqReason] = useState("");
+  const [reqStatus, setReqStatus] = useState("");
 
   function load() {
     fetch("/api/teacher/me").then((r) => r.json()).then((t) => {
@@ -56,10 +85,13 @@ export function TeacherDashboard() {
       setMeetingLink(t.meetingLink || "");
       setExcused(Boolean(t.excused));
       setExcuseReason(t.excuseReason || "");
+      setEmail(t.email || "");
+      setPhone(t.phone || "");
     });
     fetch("/api/teacher/bookings").then((r) => r.json()).then(setBookings);
     fetch("/api/teacher/attendance").then((r) => r.json()).then(setAttendance);
     fetch("/api/teacher/ledger").then((r) => r.json()).then(setLedger);
+    fetch("/api/teacher/requests").then((r) => r.json()).then(setRequests);
   }
 
   useEffect(load, []);
@@ -71,16 +103,39 @@ export function TeacherDashboard() {
       const res = await fetch("/api/teacher/me", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ meetingLink, excused, excuseReason }),
+        body: JSON.stringify({ meetingLink, excused, excuseReason, email, phone }),
       });
+      const data = await res.json();
       if (res.ok) {
         setStatus("تم الحفظ ✓");
         load();
       } else {
-        setStatus("حدث خطأ أثناء الحفظ");
+        setStatus(data.error || "حدث خطأ أثناء الحفظ");
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function changePassword() {
+    setPwStatus("");
+    setPwError("");
+    if (newPassword.length < 6) {
+      setPwError("كلمة المرور الجديدة لازم تكون 6 أحرف على الأقل.");
+      return;
+    }
+    const res = await fetch("/api/teacher/me", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setPwStatus("تم تغيير كلمة المرور ✓");
+      setCurrentPassword("");
+      setNewPassword("");
+    } else {
+      setPwError(data.error || "حدث خطأ");
     }
   }
 
@@ -91,6 +146,32 @@ export function TeacherDashboard() {
       body: JSON.stringify({ status: dayStatus }),
     });
     load();
+  }
+
+  async function submitRequest() {
+    setReqStatus("");
+    if (!reqReason.trim()) {
+      setReqStatus("اكتب سبب الطلب.");
+      return;
+    }
+    if (reqType === "cancel_lesson" && !reqBookingId) {
+      setReqStatus("اختار الحصة المراد إلغاؤها.");
+      return;
+    }
+    const res = await fetch("/api/teacher/requests", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: reqType, reason: reqReason, bookingId: reqBookingId || undefined }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setReqStatus("تم إرسال الطلب للإدارة ✓");
+      setReqReason("");
+      setReqBookingId("");
+      load();
+    } else {
+      setReqStatus(data.error || "حدث خطأ");
+    }
   }
 
   async function logout() {
@@ -108,18 +189,29 @@ export function TeacherDashboard() {
   }
 
   const today = attendance[0]?.date === new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(new Date()) ? attendance[0] : null;
+  const upcomingBookings = bookings.filter((b) => b.status === "confirmed" || b.status === "pending");
 
   return (
     <main className="admin-page">
       <div className="container">
-        <div className="admin-toolbar">
+        <div className="admin-toolbar no-print">
           <div>
             <span className="section-label">بوابة المعلمين</span>
             <h1 style={{ margin: "8px 0 0" }}>أهلًا، {teacher.nameAr}</h1>
           </div>
-          <button className="btn-mini danger" onClick={logout}>
-            <LogOut size={14} /> تسجيل الخروج
-          </button>
+          <div className="admin-actions">
+            <button className="btn-mini" onClick={() => window.print()}>
+              <Printer size={14} /> طباعة التقرير PDF
+            </button>
+            <button className="btn-mini danger" onClick={logout}>
+              <LogOut size={14} /> تسجيل الخروج
+            </button>
+          </div>
+        </div>
+
+        <div className="print-only" style={{ display: "none", marginBottom: 20 }}>
+          <h1 style={{ margin: 0 }}>تقرير المعلم: {teacher.nameAr}</h1>
+          <p style={{ color: "#555" }}>تاريخ التقرير: {new Date().toLocaleDateString("ar-EG")}</p>
         </div>
 
         <div className="admin-stats">
@@ -141,13 +233,25 @@ export function TeacherDashboard() {
           </div>
         </div>
 
-        <div className="admin-panel">
+        <div className="no-print">
+          <TeacherPushOptIn />
+        </div>
+
+        <div className="admin-panel no-print">
           <div className="admin-toolbar" style={{ marginBottom: 10 }}>
             <strong style={{ fontSize: 15 }}>
               <Video size={15} style={{ verticalAlign: "middle", marginLeft: 6 }} /> بياناتك
             </strong>
           </div>
           <div className="form-grid">
+            <div className="field">
+              <label>البريد الإلكتروني</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>رقم الموبايل</label>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
             <div className="field full">
               <label>لينك الزوم / جوجل ميت الثابت (اللي الطالب بيدخل منه)</label>
               <input value={meetingLink} onChange={(e) => setMeetingLink(e.target.value)} placeholder="https://..." />
@@ -173,18 +277,132 @@ export function TeacherDashboard() {
           </div>
         </div>
 
-        <div className="admin-panel">
+        <div className="admin-panel no-print">
           <div className="admin-toolbar" style={{ marginBottom: 10 }}>
             <strong style={{ fontSize: 15 }}>
-              <CalendarCheck size={15} style={{ verticalAlign: "middle", marginLeft: 6 }} /> الحضور اليومي
+              <User size={15} style={{ verticalAlign: "middle", marginLeft: 6 }} /> تغيير كلمة المرور
             </strong>
           </div>
-          <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 0 12px" }}>
+          <div className="form-grid">
+            <div className="field">
+              <label>كلمة المرور الحالية</label>
+              <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>كلمة المرور الجديدة</label>
+              <input type="password" minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+            </div>
+          </div>
+          {pwError && <div className="status-message error">{pwError}</div>}
+          <div className="save-bar">
+            <button className="button button-primary" onClick={changePassword}>
+              حفظ كلمة المرور
+            </button>
+            {pwStatus && <span className="status-message success" style={{ margin: 0 }}>{pwStatus}</span>}
+          </div>
+        </div>
+
+        <div className="admin-panel no-print">
+          <div className="admin-toolbar" style={{ marginBottom: 10 }}>
+            <strong style={{ fontSize: 15 }}>
+              <Send size={15} style={{ verticalAlign: "middle", marginLeft: 6 }} /> طلب إجازة أو إلغاء حصة
+            </strong>
+          </div>
+          <div className="form-grid">
+            <div className="field">
+              <label>نوع الطلب</label>
+              <select value={reqType} onChange={(e) => setReqType(e.target.value as "leave" | "cancel_lesson")}>
+                <option value="leave">إجازة / اعتذار عام</option>
+                <option value="cancel_lesson">إلغاء حصة معينة</option>
+              </select>
+            </div>
+            {reqType === "cancel_lesson" && (
+              <div className="field">
+                <label>الحصة</label>
+                <select value={reqBookingId} onChange={(e) => setReqBookingId(e.target.value)}>
+                  <option value="">اختار الحصة</option>
+                  {upcomingBookings.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} — {new Date(b.startsAt).toLocaleString("ar-EG")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="field full">
+              <label>سبب الطلب</label>
+              <textarea rows={3} value={reqReason} onChange={(e) => setReqReason(e.target.value)} />
+            </div>
+          </div>
+          <div className="save-bar">
+            <button className="button button-primary" onClick={submitRequest}>
+              إرسال الطلب
+            </button>
+            {reqStatus && <span className="status-message success" style={{ margin: 0 }}>{reqStatus}</span>}
+          </div>
+
+          {requests.length > 0 && (
+            <div className="admin-table-wrap" style={{ marginTop: 18 }}>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>النوع</th>
+                    <th>السبب</th>
+                    <th>الحالة</th>
+                    <th>رد الإدارة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {requests.map((r) => (
+                    <tr key={r.id}>
+                      <td>{requestTypeLabels[r.type]}</td>
+                      <td>{r.reason}</td>
+                      <td>
+                        <span className={`pill-status ${r.status === "approved" ? "pill-approved" : r.status === "rejected" ? "pill-rejected" : "pill-pending"}`}>
+                          {requestStatusLabels[r.status]}
+                        </span>
+                      </td>
+                      <td>{r.adminNote || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="admin-panel">
+          <strong style={{ fontSize: 15 }}>
+            <CalendarCheck size={15} style={{ verticalAlign: "middle", marginLeft: 6 }} /> الحضور اليومي
+          </strong>
+          <p style={{ fontSize: 13, color: "var(--muted)", margin: "12px 0" }}>
             {today ? `تم تسجيل حضورك النهاردة: ${statusLabels[today.status] || today.status}` : "لسه ماسجلتش حضورك النهاردة."}
           </p>
-          <div className="admin-actions">
+          <div className="admin-actions no-print">
             <button className="btn-mini primary" onClick={() => checkin("present")}>تسجيل حضور</button>
             <button className="btn-mini danger" onClick={() => checkin("absent")}>تسجيل غياب</button>
+          </div>
+          <div className="admin-table-wrap" style={{ marginTop: 14 }}>
+            {attendance.length === 0 ? (
+              <div className="admin-empty">لا يوجد سجل حضور بعد.</div>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>اليوم</th>
+                    <th>الحالة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendance.map((a) => (
+                    <tr key={a.id}>
+                      <td>{a.date}</td>
+                      <td>{statusLabels[a.status] || a.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 

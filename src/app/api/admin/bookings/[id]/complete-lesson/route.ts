@@ -3,7 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { bookings, teachers, teacherLedger, users, lessonTransactions, chatMessages } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
-import { notifyUser } from "@/lib/push";
+import { notifyUser, notifyTeacher } from "@/lib/push";
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireAdmin();
@@ -39,12 +39,25 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     note: `حصة ${booking.reference} — ${booking.name}`,
   });
 
+  const [{ teacherBalance }] = await db
+    .select({ teacherBalance: sql<string>`coalesce(sum(${teacherLedger.amount}), 0)` })
+    .from(teacherLedger)
+    .where(eq(teacherLedger.teacherId, teacher.id));
+
+  await notifyTeacher(teacher.id, {
+    title: "تم قبض حصة جديدة 💰",
+    body: `تم إضافة ${Number(rate).toFixed(2)} لحسابك عن حصة ${booking.reference} (${booking.name}). رصيدك الحالي: ${Number(teacherBalance).toFixed(2)}.`,
+    url: "/teacher",
+    tag: `teacher-credit-${bookingId}`,
+  });
+
   let debited = false;
   if (booking.userId) {
-    await db
+    const [updatedUser] = await db
       .update(users)
       .set({ lessonBalance: sql`${users.lessonBalance} - 1` })
-      .where(eq(users.id, booking.userId));
+      .where(eq(users.id, booking.userId))
+      .returning();
     await db.insert(lessonTransactions).values({
       userId: booking.userId,
       delta: -1,
@@ -53,7 +66,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     });
     debited = true;
 
-    const message = "تم بحمد الله إكمال حصتك، سعدنا بوجودك معنا. تم خصم حصة من رصيدك.";
+    const message = `تم بحمد الله إكمال حصتك، سعدنا بوجودك معنا. تم خصم حصة من رصيدك — رصيدك المتبقي: ${updatedUser.lessonBalance} حصة.`;
     await db.insert(chatMessages).values({
       userId: booking.userId,
       senderType: "admin",

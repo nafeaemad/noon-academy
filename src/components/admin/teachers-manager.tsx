@@ -19,6 +19,7 @@ type Teacher = {
   availabilityAr: string;
   availabilityEn: string;
   email: string | null;
+  phone: string | null;
   approved: boolean;
   meetingLink: string | null;
   excused: boolean;
@@ -40,6 +41,8 @@ const empty = {
   availabilityAr: "متاح الآن",
   availabilityEn: "Available now",
   email: "",
+  phone: "",
+  password: "",
   meetingLink: "",
   ratePerLesson: "0",
   excused: false,
@@ -102,6 +105,8 @@ export function TeachersManager() {
       availabilityAr: t.availabilityAr,
       availabilityEn: t.availabilityEn,
       email: t.email || "",
+      phone: t.phone || "",
+      password: "",
       meetingLink: t.meetingLink || "",
       ratePerLesson: t.ratePerLesson || "0",
       excused: t.excused,
@@ -233,6 +238,14 @@ export function TeachersManager() {
               <div className="field">
                 <label>البريد الإلكتروني (لتسجيل دخول المدرس)</label>
                 <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>رقم الموبايل</label>
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>{editingId === "new" ? "كلمة مرور الدخول" : "تغيير كلمة المرور (اتركها فاضية للإبقاء عليها)"}</label>
+                <input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="6 أحرف على الأقل" />
               </div>
               <div className="field">
                 <label>سعر الحصة الواحدة (قبض)</label>

@@ -36,6 +36,7 @@ export const teachers = pgTable("teachers", {
   availabilityEn: varchar("availability_en", { length: 160 }).notNull().default("Available now"),
   // Teacher portal: self-service login + payroll
   email: varchar("email", { length: 220 }).unique(),
+  phone: varchar("phone", { length: 60 }),
   passwordHash: text("password_hash"),
   approved: boolean("approved").notNull().default(true),
   meetingLink: text("meeting_link"),
@@ -214,4 +215,30 @@ export const lessonTransactions = pgTable("lesson_transactions", {
   reason: varchar("reason", { length: 160 }).notNull(),
   bookingId: integer("booking_id").references(() => bookings.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const teacherPushSubscriptions = pgTable("teacher_push_subscriptions", {
+  id: serial("id").primaryKey(),
+  teacherId: integer("teacher_id")
+    .notNull()
+    .references(() => teachers.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Teacher requests: leave (إجازة/اعتذار) or cancelling a specific lesson, reviewed by admin.
+export const teacherRequests = pgTable("teacher_requests", {
+  id: serial("id").primaryKey(),
+  teacherId: integer("teacher_id")
+    .notNull()
+    .references(() => teachers.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 20 }).notNull(), // leave | cancel_lesson
+  bookingId: integer("booking_id").references(() => bookings.id, { onDelete: "set null" }),
+  reason: text("reason").notNull(),
+  status: varchar("status", { length: 12 }).notNull().default("pending"), // pending | approved | rejected
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
 });

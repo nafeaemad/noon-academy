@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LogOut, Calendar, MessageCircle, Video, GraduationCap } from "lucide-react";
+import { LogOut, Calendar, MessageCircle, Video, GraduationCap, Printer } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
 
@@ -18,6 +18,8 @@ type Booking = {
   meetingLink: string | null;
 };
 
+type LessonTx = { id: number; delta: number; reason: string; createdAt: string };
+
 const statusLabelAr: Record<string, string> = { pending: "قيد الانتظار", confirmed: "مؤكد", cancelled: "ملغي", completed: "مكتمل" };
 const statusLabelEn: Record<string, string> = { pending: "Pending", confirmed: "Confirmed", cancelled: "Cancelled", completed: "Completed" };
 
@@ -25,6 +27,7 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
   const { isArabic } = useLanguage();
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [lessonBalance, setLessonBalance] = useState<number | null>(null);
+  const [lessonTx, setLessonTx] = useState<LessonTx[]>([]);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -37,6 +40,9 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
         setBookings(Array.isArray(data?.bookings) ? data.bookings : []);
         setLessonBalance(typeof data?.lessonBalance === "number" ? data.lessonBalance : 0);
       });
+    fetch("/api/account/lessons")
+      .then((r) => r.json())
+      .then((rows) => setLessonTx(Array.isArray(rows) ? rows : []));
   }, []);
 
   async function changePassword(e: FormEvent) {
@@ -68,6 +74,17 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
       />
       <section className="page-content">
         <div className="container" style={{ maxWidth: 640 }}>
+          <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+            <button className="btn-mini" onClick={() => window.print()}>
+              <Printer size={14} /> {isArabic ? "طباعة التقرير PDF" : "Print report as PDF"}
+            </button>
+          </div>
+          <div className="print-only" style={{ marginBottom: 16 }}>
+            <h1 style={{ margin: 0 }}>{isArabic ? "تقرير الطالب" : "Student report"}: {user.name}</h1>
+            <p style={{ color: "#555" }}>
+              {isArabic ? "تاريخ التقرير" : "Report date"}: {new Date().toLocaleDateString(isArabic ? "ar-EG" : "en-US")}
+            </p>
+          </div>
           {lessonBalance !== null && (
             <div className="admin-panel" style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <GraduationCap size={28} color="var(--green)" />
@@ -130,7 +147,38 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
             )}
           </div>
 
-          <form className="admin-panel" onSubmit={changePassword} style={{ marginTop: 20 }}>
+          {lessonTx.length > 0 && (
+            <div className="admin-panel">
+              <div className="admin-toolbar" style={{ marginBottom: 10 }}>
+                <strong style={{ fontSize: 15 }}>
+                  <GraduationCap size={16} style={{ verticalAlign: "-3px", marginInlineEnd: 6 }} />
+                  {isArabic ? "سجل رصيد الحصص" : "Lesson balance history"}
+                </strong>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>{isArabic ? "التاريخ" : "Date"}</th>
+                      <th>{isArabic ? "السبب" : "Reason"}</th>
+                      <th>{isArabic ? "عدد الحصص" : "Lessons"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lessonTx.map((t) => (
+                      <tr key={t.id}>
+                        <td>{new Date(t.createdAt).toLocaleDateString(isArabic ? "ar-EG" : "en-US")}</td>
+                        <td>{t.reason}</td>
+                        <td style={{ color: t.delta < 0 ? "#9d2920" : "#1e6549" }}>{t.delta > 0 ? `+${t.delta}` : t.delta}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <form className="admin-panel no-print" onSubmit={changePassword} style={{ marginTop: 20 }}>
             <div className="admin-toolbar" style={{ marginBottom: 10 }}>
               <strong style={{ fontSize: 15 }}>{isArabic ? "تغيير كلمة المرور" : "Change password"}</strong>
             </div>
@@ -153,11 +201,11 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
             </div>
           </form>
 
-          <Link href="/account/chat" className="button button-primary" style={{ marginTop: 20 }}>
+          <Link href="/account/chat" className="button button-primary no-print" style={{ marginTop: 20 }}>
             <MessageCircle size={16} /> {isArabic ? "الشات المباشر مع الأكاديمية" : "Live chat with the academy"}
           </Link>
 
-          <button className="button button-outline" style={{ marginTop: 12 }} onClick={() => signOut({ callbackUrl: "/" })}>
+          <button className="button button-outline no-print" style={{ marginTop: 12 }} onClick={() => signOut({ callbackUrl: "/" })}>
             <LogOut size={16} /> {isArabic ? "تسجيل الخروج" : "Log out"}
           </button>
         </div>

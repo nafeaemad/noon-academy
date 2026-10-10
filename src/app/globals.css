@@ -54,3 +54,13 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 :focus-visible{outline:3px solid #d6b66f;outline-offset:3px}
 .logo-wrap strong.logo-en{font-family:Georgia,"Times New Roman",serif;letter-spacing:.2px}
+.print-only{display:none}
+@media print{
+  .site-header,.site-footer,.whatsapp-float,.chat-launcher-menu,.no-print{display:none!important}
+  .print-only{display:block!important}
+  body{background:#fff}
+  .admin-page{padding:0;background:#fff;min-height:0}
+  .admin-panel{box-shadow:none;border:1px solid #ccc;break-inside:avoid;margin-bottom:14px}
+  .admin-table-wrap{border-color:#ccc}
+  a[href]:after{content:""}
+}
