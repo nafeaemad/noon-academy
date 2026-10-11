@@ -41,6 +41,8 @@
 .pill-pending{background:#fdf2df;color:#96650c}.pill-confirmed{background:#e2f0e9;color:#1e6549}.pill-completed{background:#dff0ff;color:#155a9c}.pill-cancelled,.pill-rejected{background:#fbe4e2;color:#9d2920}.pill-approved{background:#e2f0e9;color:#1e6549}
 .admin-actions{display:flex;gap:6px;flex-wrap:wrap}
 .admin-actions select{border:1px solid #ccd5d1;border-radius:6px;padding:6px 8px;font-size:13px}
+.mini-input{width:100%;border:1px solid #ccd5d1;border-radius:6px;padding:7px 9px;font-size:13px;font-family:inherit}
+.mini-input:focus{outline:none;border-color:var(--green)}
 .btn-mini{border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}
 .btn-mini:hover{border-color:var(--green)}
 .btn-mini.danger{color:#9d2920;border-color:#f1c9c5}
