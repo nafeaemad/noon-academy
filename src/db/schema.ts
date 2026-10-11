@@ -43,6 +43,7 @@ export const teachers = pgTable("teachers", {
   excused: boolean("excused").notNull().default(false),
   excuseReason: text("excuse_reason"),
   ratePerLesson: numeric("rate_per_lesson", { precision: 10, scale: 2 }).notNull().default("0"),
+  currency: varchar("currency", { length: 10 }).notNull().default("EGP"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -228,17 +229,23 @@ export const teacherPushSubscriptions = pgTable("teacher_push_subscriptions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Teacher requests: leave (إجازة/اعتذار) or cancelling a specific lesson, reviewed by admin.
+// Teacher requests: leave (إجازة/اعتذار), cancelling a specific lesson, or asking to change their lesson price — reviewed by admin.
 export const teacherRequests = pgTable("teacher_requests", {
   id: serial("id").primaryKey(),
   teacherId: integer("teacher_id")
     .notNull()
     .references(() => teachers.id, { onDelete: "cascade" }),
-  type: varchar("type", { length: 20 }).notNull(), // leave | cancel_lesson
+  type: varchar("type", { length: 20 }).notNull(), // leave | cancel_lesson | rate_change
   bookingId: integer("booking_id").references(() => bookings.id, { onDelete: "set null" }),
   reason: text("reason").notNull(),
   status: varchar("status", { length: 12 }).notNull().default("pending"), // pending | approved | rejected
   adminNote: text("admin_note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  // Price-change requests (type = rate_change) only:
+  requestedRate: numeric("requested_rate", { precision: 10, scale: 2 }),
+  previousRate: numeric("previous_rate", { precision: 10, scale: 2 }),
+  autoActivate: boolean("auto_activate").notNull().default(false),
+  effectiveAt: timestamp("effective_at", { withTimezone: true }),
+  applied: boolean("applied").notNull().default(false),
 });

@@ -17,6 +17,7 @@ type Teacher = {
   excused: boolean;
   excuseReason: string | null;
   ratePerLesson: string;
+  currency: string;
   balance: number;
 };
 
@@ -35,12 +36,16 @@ type Attendance = { id: number; date: string; status: string; note: string | nul
 type LedgerRow = { id: number; amount: string; type: string; note: string | null; createdAt: string };
 type RequestRow = {
   id: number;
-  type: "leave" | "cancel_lesson";
+  type: "leave" | "cancel_lesson" | "rate_change";
   bookingId: number | null;
   reason: string;
   status: "pending" | "approved" | "rejected";
   adminNote: string | null;
   createdAt: string;
+  requestedRate: string | null;
+  autoActivate: boolean;
+  effectiveAt: string | null;
+  applied: boolean;
 };
 
 const statusLabels: Record<string, string> = {
@@ -50,7 +55,11 @@ const statusLabels: Record<string, string> = {
   completed: "مكتمل",
 };
 
-const requestTypeLabels: Record<string, string> = { leave: "طلب إجازة / اعتذار", cancel_lesson: "طلب إلغاء حصة" };
+const requestTypeLabels: Record<string, string> = {
+  leave: "طلب إجازة / اعتذار",
+  cancel_lesson: "طلب إلغاء حصة",
+  rate_change: "طلب تغيير سعر الحصة",
+};
 const requestStatusLabels: Record<string, string> = { pending: "قيد المراجعة", approved: "تمت الموافقة", rejected: "مرفوض" };
 
 export function TeacherDashboard() {
@@ -74,9 +83,10 @@ export function TeacherDashboard() {
   const [pwStatus, setPwStatus] = useState("");
   const [pwError, setPwError] = useState("");
 
-  const [reqType, setReqType] = useState<"leave" | "cancel_lesson">("leave");
+  const [reqType, setReqType] = useState<"leave" | "cancel_lesson" | "rate_change">("leave");
   const [reqBookingId, setReqBookingId] = useState("");
   const [reqReason, setReqReason] = useState("");
+  const [reqRate, setReqRate] = useState("");
   const [reqStatus, setReqStatus] = useState("");
 
   function load() {
@@ -158,16 +168,26 @@ export function TeacherDashboard() {
       setReqStatus("اختار الحصة المراد إلغاؤها.");
       return;
     }
+    if (reqType === "rate_change" && (!reqRate || Number(reqRate) <= 0)) {
+      setReqStatus("اكتب السعر الجديد المطلوب للحصة.");
+      return;
+    }
     const res = await fetch("/api/teacher/requests", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ type: reqType, reason: reqReason, bookingId: reqBookingId || undefined }),
+      body: JSON.stringify({
+        type: reqType,
+        reason: reqReason,
+        bookingId: reqBookingId || undefined,
+        requestedRate: reqType === "rate_change" ? reqRate : undefined,
+      }),
     });
     const data = await res.json();
     if (res.ok) {
       setReqStatus("تم إرسال الطلب للإدارة ✓");
       setReqReason("");
       setReqBookingId("");
+      setReqRate("");
       load();
     } else {
       setReqStatus(data.error || "حدث خطأ");
@@ -216,11 +236,11 @@ export function TeacherDashboard() {
 
         <div className="admin-stats">
           <div>
-            <strong>{teacher.balance.toFixed(2)}</strong>
+            <strong>{teacher.balance.toFixed(2)} {teacher.currency}</strong>
             <span>رصيدك الحالي (قبض)</span>
           </div>
           <div>
-            <strong>{Number(teacher.ratePerLesson).toFixed(2)}</strong>
+            <strong>{Number(teacher.ratePerLesson).toFixed(2)} {teacher.currency}</strong>
             <span>سعر الحصة الواحدة</span>
           </div>
           <div>
@@ -311,9 +331,10 @@ export function TeacherDashboard() {
           <div className="form-grid">
             <div className="field">
               <label>نوع الطلب</label>
-              <select value={reqType} onChange={(e) => setReqType(e.target.value as "leave" | "cancel_lesson")}>
+              <select value={reqType} onChange={(e) => setReqType(e.target.value as "leave" | "cancel_lesson" | "rate_change")}>
                 <option value="leave">إجازة / اعتذار عام</option>
                 <option value="cancel_lesson">إلغاء حصة معينة</option>
+                <option value="rate_change">تغيير سعر الحصة (زيادة أو تخفيض)</option>
               </select>
             </div>
             {reqType === "cancel_lesson" && (
@@ -329,6 +350,12 @@ export function TeacherDashboard() {
                 </select>
               </div>
             )}
+            {reqType === "rate_change" && (
+              <div className="field">
+                <label>السعر الجديد المطلوب ({teacher.currency}) — سعرك الحالي {Number(teacher.ratePerLesson).toFixed(2)}</label>
+                <input type="number" step="0.01" value={reqRate} onChange={(e) => setReqRate(e.target.value)} />
+              </div>
+            )}
             <div className="field full">
               <label>سبب الطلب</label>
               <textarea rows={3} value={reqReason} onChange={(e) => setReqReason(e.target.value)} />
@@ -340,9 +367,16 @@ export function TeacherDashboard() {
             </button>
             {reqStatus && <span className="status-message success" style={{ margin: 0 }}>{reqStatus}</span>}
           </div>
+        </div>
 
-          {requests.length > 0 && (
-            <div className="admin-table-wrap" style={{ marginTop: 18 }}>
+        <div className="admin-panel">
+          <strong style={{ fontSize: 15 }}>
+            <Send size={15} style={{ verticalAlign: "middle", marginLeft: 6 }} /> طلباتي (إجازة / إلغاء حصة / تغيير سعر)
+          </strong>
+          {requests.length === 0 ? (
+            <div className="admin-empty" style={{ marginTop: 14 }}>لسه معملتش أي طلبات.</div>
+          ) : (
+            <div className="admin-table-wrap" style={{ marginTop: 14 }}>
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -355,16 +389,64 @@ export function TeacherDashboard() {
                 <tbody>
                   {requests.map((r) => (
                     <tr key={r.id}>
-                      <td>{requestTypeLabels[r.type]}</td>
+                      <td>
+                        {requestTypeLabels[r.type]}
+                        {r.type === "rate_change" && r.requestedRate && (
+                          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
+                            السعر المطلوب: {Number(r.requestedRate).toFixed(2)} {teacher.currency}
+                          </div>
+                        )}
+                      </td>
                       <td>{r.reason}</td>
                       <td>
                         <span className={`pill-status ${r.status === "approved" ? "pill-approved" : r.status === "rejected" ? "pill-rejected" : "pill-pending"}`}>
                           {requestStatusLabels[r.status]}
                         </span>
+                        {r.type === "rate_change" && r.status === "approved" && (
+                          <div style={{ fontSize: 12, marginTop: 4 }}>
+                            {r.applied
+                              ? "✓ السعر مفعّل"
+                              : r.autoActivate && r.effectiveAt
+                                ? `هيتفعّل ${new Date(r.effectiveAt).toLocaleString("ar-EG")}`
+                                : "في انتظار تفعيل الإدارة"}
+                          </div>
+                        )}
                       </td>
                       <td>{r.adminNote || "—"}</td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="admin-panel">
+          <strong style={{ fontSize: 15 }}>
+            <Wallet size={15} style={{ verticalAlign: "middle", marginLeft: 6 }} /> سجل المدفوعات المستلمة
+          </strong>
+          {ledger.filter((l) => l.type === "payout").length === 0 ? (
+            <div className="admin-empty" style={{ marginTop: 14 }}>لسه معندكش أي دفعات مستلمة.</div>
+          ) : (
+            <div className="admin-table-wrap" style={{ marginTop: 14 }}>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>التاريخ</th>
+                    <th>المبلغ</th>
+                    <th>ملاحظة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ledger
+                    .filter((l) => l.type === "payout")
+                    .map((l) => (
+                      <tr key={l.id}>
+                        <td>{new Date(l.createdAt).toLocaleDateString("ar-EG")}</td>
+                        <td>{Math.abs(Number(l.amount)).toFixed(2)} {teacher.currency}</td>
+                        <td>{l.note || "—"}</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -460,7 +542,7 @@ export function TeacherDashboard() {
                     <tr key={l.id}>
                       <td>{new Date(l.createdAt).toLocaleDateString("ar-EG")}</td>
                       <td>{l.type === "credit" ? "حصة مكتملة" : l.type === "payout" ? "صرف" : "تعديل"}</td>
-                      <td>{Number(l.amount).toFixed(2)}</td>
+                      <td>{Number(l.amount).toFixed(2)} {teacher.currency}</td>
                       <td>{l.note || "—"}</td>
                     </tr>
                   ))}

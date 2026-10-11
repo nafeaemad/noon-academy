@@ -6,11 +6,14 @@ import { db } from "@/db";
 import { teacherLedger, teachers } from "@/db/schema";
 import { requireTeacher } from "@/lib/require-teacher";
 import { TEACHER_COOKIE, buildCookieValue } from "@/lib/teacher-auth";
+import { applyDueRateChanges } from "@/lib/teacher-rate-changes";
 
 export async function GET() {
   const result = await requireTeacher();
   if ("denied" in result) return result.denied;
-  const { teacher } = result;
+  await applyDueRateChanges();
+  // Re-fetch in case this teacher's own rate was just activated above.
+  const [teacher] = await db.select().from(teachers).where(eq(teachers.id, result.teacher.id));
 
   const [{ balance }] = await db
     .select({ balance: sql<string>`coalesce(sum(${teacherLedger.amount}), 0)` })

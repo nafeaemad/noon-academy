@@ -42,6 +42,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     phone: body.phone || null,
     meetingLink: body.meetingLink || null,
     ratePerLesson: body.ratePerLesson != null ? String(body.ratePerLesson) : "0",
+    currency: body.currency ? String(body.currency).trim().toUpperCase().slice(0, 10) : "EGP",
     excused: Boolean(body.excused),
     excuseReason: body.excused ? body.excuseReason || null : null,
   };

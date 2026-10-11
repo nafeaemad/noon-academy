@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { PwaRegister } from "@/components/pwa-register";
+import { ToastProvider } from "@/components/toast-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,5 +30,5 @@ export const viewport: Viewport = {
 const schema = { "@context": "https://schema.org", "@type": "EducationalOrganization", name: "Noon Academy for Teaching the Quran to Non-Arabic Speakers", alternateName: "أكاديمية نون لتعليم الأعاجم القرآن الكريم", url: "https://noonquran.academy", email: "hello@noonquran.academy", description: "Online Quran and Tajweed education for non-Arabic speakers.", areaServed: "Worldwide" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
- return <html lang="en" suppressHydrationWarning><body><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}/><PwaRegister/><AppShell>{children}</AppShell></body></html>;
+ return <html lang="en" suppressHydrationWarning><body><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}/><PwaRegister/><AppShell>{children}</AppShell><ToastProvider/></body></html>;
 }

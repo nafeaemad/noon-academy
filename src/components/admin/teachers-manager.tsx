@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, Plus, Pencil, Trash2, X, CheckCircle2, KeyRound, Wallet } from "lucide-react";
+import { toast } from "@/components/toast-provider";
 
 type Teacher = {
   id: number;
@@ -25,7 +26,10 @@ type Teacher = {
   excused: boolean;
   excuseReason: string | null;
   ratePerLesson: string;
+  currency: string;
 };
+
+const currencyOptions = ["EGP", "USD", "SAR", "AED", "KWD", "QAR", "EUR", "GBP"];
 
 const empty = {
   nameAr: "",
@@ -45,6 +49,7 @@ const empty = {
   password: "",
   meetingLink: "",
   ratePerLesson: "0",
+  currency: "EGP",
   excused: false,
 };
 
@@ -113,6 +118,7 @@ export function TeachersManager() {
       password: "",
       meetingLink: t.meetingLink || "",
       ratePerLesson: t.ratePerLesson || "0",
+      currency: t.currency || "EGP",
       excused: t.excused,
     });
     setEditingId(t.id);
@@ -131,8 +137,8 @@ export function TeachersManager() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ password }),
     });
-    if (res.ok) alert("تم تغيير كلمة المرور ✓");
-    else alert("حدث خطأ");
+    if (res.ok) toast({ type: "success", title: "تم تغيير كلمة المرور ✓" });
+    else toast({ type: "error", title: "حدث خطأ" });
   }
 
   async function submit(e: FormEvent) {
@@ -154,6 +160,7 @@ export function TeachersManager() {
       }
       setEditingId(null);
       load();
+      toast({ type: "success", title: editingId === "new" ? "تمت إضافة المدرس ✓" : "تم حفظ بيانات المدرس ✓" });
     } finally {
       setSaving(false);
     }
@@ -163,6 +170,7 @@ export function TeachersManager() {
     if (!confirm("هل تريد حذف هذا المدرس؟")) return;
     await fetch(`/api/admin/teachers/${id}`, { method: "DELETE" });
     load();
+    toast({ type: "success", title: "تم حذف المدرس ✓" });
   }
 
   return (
@@ -265,6 +273,16 @@ export function TeachersManager() {
               <div className="field">
                 <label>سعر الحصة الواحدة (قبض)</label>
                 <input type="number" step="0.01" value={form.ratePerLesson} onChange={(e) => setForm({ ...form, ratePerLesson: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>عملة الدفع</label>
+                <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
+                  {currencyOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="field full">
                 <label>لينك الزوم / جوجل ميت الثابت بتاع المدرس</label>

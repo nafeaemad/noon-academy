@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Trash2, Reply, X, Send, Wallet } from "lucide-react";
+import { toast } from "@/components/toast-provider";
 
 type Booking = {
   id: number;
@@ -139,11 +140,15 @@ export function BookingsManager() {
     const res = await fetch(`/api/admin/bookings/${b.id}/complete-lesson`, { method: "POST" });
     const data = await res.json();
     if (!res.ok) {
-      alert(data.error || "حدث خطأ");
+      toast({ type: "error", title: "حدث خطأ", message: data.error || undefined });
       return;
     }
     setRows((prev) => prev?.map((row) => (row.id === b.id ? { ...row, status: "completed", creditedAt: new Date().toISOString() } : row)) ?? prev);
-    alert(data.debited ? "تم تسجيل القبض وخصم حصة من رصيد الطالب ✓" : "تم تسجيل القبض للمدرس (الطالب بدون حساب فمفيش رصيد نخصم منه).");
+    toast({
+      type: "success",
+      title: "تم تسجيل الحصة كمكتملة ✓",
+      message: data.debited ? "تم تسجيل القبض وخصم حصة من رصيد الطالب." : "تم تسجيل القبض للمدرس (الطالب بدون حساب فمفيش رصيد نخصم منه).",
+    });
   }
 
   const replyingBooking = rows?.find((b) => b.id === replyingId) || null;

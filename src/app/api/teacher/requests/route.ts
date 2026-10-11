@@ -23,13 +23,15 @@ export async function POST(req: Request) {
   const { teacher } = result;
   const body = await req.json();
 
-  const type = body.type === "cancel_lesson" ? "cancel_lesson" : "leave";
+  const type = body.type === "cancel_lesson" ? "cancel_lesson" : body.type === "rate_change" ? "rate_change" : "leave";
   const reason = String(body.reason || "").trim();
   if (!reason) {
     return NextResponse.json({ error: "من فضلك اكتب سبب الطلب." }, { status: 400 });
   }
 
   let bookingId: number | null = null;
+  let requestedRate: string | null = null;
+
   if (type === "cancel_lesson") {
     bookingId = body.bookingId ? Number(body.bookingId) : null;
     if (!bookingId) {
@@ -41,14 +43,25 @@ export async function POST(req: Request) {
     }
   }
 
+  if (type === "rate_change") {
+    const value = Number(body.requestedRate);
+    if (!value || value <= 0) {
+      return NextResponse.json({ error: "اكتب السعر الجديد المطلوب للحصة." }, { status: 400 });
+    }
+    requestedRate = String(value);
+  }
+
   const [row] = await db
     .insert(teacherRequests)
-    .values({ teacherId: teacher.id, type, bookingId, reason })
+    .values({ teacherId: teacher.id, type, bookingId, reason, requestedRate })
     .returning();
 
+  const typeTitle =
+    type === "leave" ? "طلب إجازة جديد من معلم" : type === "cancel_lesson" ? "طلب إلغاء حصة من معلم" : "طلب تغيير سعر الحصة من معلم";
+
   await notifyAdmins({
-    title: type === "leave" ? "طلب إجازة جديد من معلم" : "طلب إلغاء حصة من معلم",
-    body: `${teacher.nameAr}: ${reason}`,
+    title: typeTitle,
+    body: type === "rate_change" ? `${teacher.nameAr} طلب تغيير سعر الحصة إلى ${requestedRate}: ${reason}` : `${teacher.nameAr}: ${reason}`,
     url: "/admin/teacher-requests",
     tag: `teacher-request-${row.id}`,
   });

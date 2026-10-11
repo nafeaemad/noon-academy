@@ -2,23 +2,30 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, X as XIcon, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight, Check, X as XIcon, Pencil, Trash2, Zap } from "lucide-react";
+import { toast } from "@/components/toast-provider";
 
 type RequestRow = {
   id: number;
-  type: "leave" | "cancel_lesson";
+  type: "leave" | "cancel_lesson" | "rate_change";
   reason: string;
   status: "pending" | "approved" | "rejected";
   adminNote: string | null;
   createdAt: string;
   teacherId: number;
   teacherNameAr: string | null;
+  teacherCurrency: string | null;
   bookingId: number | null;
   bookingReference: string | null;
   bookingStartsAt: string | null;
+  requestedRate: string | null;
+  currentRate: string | null;
+  autoActivate: boolean;
+  effectiveAt: string | null;
+  applied: boolean;
 };
 
-const typeLabels: Record<string, string> = { leave: "إجازة / اعتذار", cancel_lesson: "إلغاء حصة" };
+const typeLabels: Record<string, string> = { leave: "إجازة / اعتذار", cancel_lesson: "إلغاء حصة", rate_change: "تغيير سعر الحصة" };
 const statusLabels: Record<string, string> = { pending: "قيد المراجعة", approved: "تمت الموافقة", rejected: "مرفوض" };
 
 export function TeacherRequestsManager() {
@@ -26,6 +33,8 @@ export function TeacherRequestsManager() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [notes, setNotes] = useState<Record<number, string>>({});
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [activationMode, setActivationMode] = useState<Record<number, "now" | "scheduled" | "manual">>({});
+  const [scheduledAt, setScheduledAt] = useState<Record<number, string>>({});
 
   function load() {
     fetch("/api/admin/teacher-requests")
@@ -41,21 +50,44 @@ export function TeacherRequestsManager() {
     setNotes((prev) => ({ ...prev, [id]: value }));
   }
 
-  async function respond(id: number, approve: boolean) {
-    setBusyId(id);
+  async function respond(r: RequestRow, approve: boolean) {
+    setBusyId(r.id);
     try {
-      const res = await fetch(`/api/admin/teacher-requests/${id}/respond`, {
+      const body: Record<string, unknown> = { approve, note: noteFor(r.id) || undefined };
+      if (r.type === "rate_change" && approve) {
+        const mode = activationMode[r.id] || "manual";
+        body.activation = mode;
+        if (mode === "scheduled") body.effectiveAt = scheduledAt[r.id] || undefined;
+      }
+      const res = await fetch(`/api/admin/teacher-requests/${r.id}/respond`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ approve, note: noteFor(id) || undefined }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
-        setNoteFor(id, "");
+        setNoteFor(r.id, "");
         setEditingId(null);
         load();
+        toast({ type: approve ? "success" : "info", title: approve ? "تمت الموافقة على الطلب ✓" : "تم رفض الطلب" });
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || "حدث خطأ");
+        toast({ type: "error", title: "حدث خطأ", message: data.error || undefined });
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function applyNow(id: number) {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/admin/teacher-requests/${id}/apply-rate`, { method: "POST" });
+      if (res.ok) {
+        load();
+        toast({ type: "success", title: "تم تفعيل السعر الجديد ✓" });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({ type: "error", title: "حدث خطأ", message: data.error || undefined });
       }
     } finally {
       setBusyId(null);
@@ -63,15 +95,16 @@ export function TeacherRequestsManager() {
   }
 
   async function removeRequest(id: number) {
-    if (!confirm("متأكد إنك عايز تمسح الطلب ده؟ ملحوظة: المسح مش هيرجّع أي إجراء اتنفّذ بالفعل (زي إلغاء حصة أو اعتذار المدرس) — ده بيشيل سجل الطلب بس.")) return;
+    if (!confirm("متأكد إنك عايز تمسح الطلب ده؟ ملحوظة: المسح مش هيرجّع أي إجراء اتنفّذ بالفعل (زي إلغاء حصة أو تفعيل سعر جديد) — ده بيشيل سجل الطلب بس.")) return;
     setBusyId(id);
     try {
       const res = await fetch(`/api/admin/teacher-requests/${id}/respond`, { method: "DELETE" });
       if (res.ok) {
         load();
+        toast({ type: "success", title: "تم حذف الطلب ✓" });
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || "حدث خطأ");
+        toast({ type: "error", title: "حدث خطأ", message: data.error || undefined });
       }
     } finally {
       setBusyId(null);
@@ -81,6 +114,20 @@ export function TeacherRequestsManager() {
   const pending = rows?.filter((r) => r.status === "pending") || [];
   const resolved = rows?.filter((r) => r.status !== "pending") || [];
 
+  function describeRate(r: RequestRow) {
+    const cur = r.teacherCurrency || "";
+    return `${Number(r.currentRate || 0).toFixed(2)} ← ${Number(r.requestedRate || 0).toFixed(2)} ${cur}`;
+  }
+
+  function rateActivationStatus(r: RequestRow) {
+    if (r.status !== "approved") return null;
+    if (r.applied) return <span className="pill-status pill-approved">مفعّل</span>;
+    if (r.autoActivate && r.effectiveAt) {
+      return <span className="pill-status pill-pending">هيتفعّل {new Date(r.effectiveAt).toLocaleString("ar-EG")}</span>;
+    }
+    return <span className="pill-status pill-pending">لسه مش مفعّل</span>;
+  }
+
   return (
     <main className="admin-page">
       <div className="container">
@@ -88,7 +135,7 @@ export function TeacherRequestsManager() {
           <ArrowRight style={{ transform: "scaleX(-1)" }} /> رجوع للوحة الرئيسية
         </Link>
         <span className="section-label">طلبات المعلمين</span>
-        <h1 style={{ margin: "8px 0 0" }}>طلبات الإجازة وإلغاء الحصص</h1>
+        <h1 style={{ margin: "8px 0 0" }}>طلبات الإجازة وإلغاء الحصص وتغيير السعر</h1>
 
         <div className="admin-panel" style={{ marginTop: 20 }}>
           <strong style={{ fontSize: 15 }}>طلبات قيد المراجعة ({pending.length})</strong>
@@ -104,7 +151,7 @@ export function TeacherRequestsManager() {
                     <th>المعلم</th>
                     <th>النوع</th>
                     <th>السبب</th>
-                    <th>الحصة</th>
+                    <th>التفاصيل</th>
                     <th>ملاحظة الإدارة (اختياري)</th>
                     <th>إجراء</th>
                   </tr>
@@ -115,7 +162,31 @@ export function TeacherRequestsManager() {
                       <td>{r.teacherNameAr || "—"}</td>
                       <td>{typeLabels[r.type]}</td>
                       <td>{r.reason}</td>
-                      <td>{r.bookingReference ? `${r.bookingReference} — ${new Date(r.bookingStartsAt!).toLocaleString("ar-EG")}` : "—"}</td>
+                      <td style={{ minWidth: 200 }}>
+                        {r.type === "cancel_lesson" && (r.bookingReference ? `${r.bookingReference} — ${new Date(r.bookingStartsAt!).toLocaleString("ar-EG")}` : "—")}
+                        {r.type === "rate_change" && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <strong>{describeRate(r)}</strong>
+                            <select
+                              className="mini-input"
+                              value={activationMode[r.id] || "manual"}
+                              onChange={(e) => setActivationMode((prev) => ({ ...prev, [r.id]: e.target.value as "now" | "scheduled" | "manual" }))}
+                            >
+                              <option value="now">تفعيل فوري عند الموافقة</option>
+                              <option value="scheduled">تفعيل في وقت محدد</option>
+                              <option value="manual">رفض التفعيل التلقائي (تفعيل لاحقًا يدويًا)</option>
+                            </select>
+                            {(activationMode[r.id] || "manual") === "scheduled" && (
+                              <input
+                                type="datetime-local"
+                                className="mini-input"
+                                value={scheduledAt[r.id] || ""}
+                                onChange={(e) => setScheduledAt((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                              />
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td style={{ minWidth: 180 }}>
                         <input
                           type="text"
@@ -130,7 +201,7 @@ export function TeacherRequestsManager() {
                           <button
                             className="btn-mini primary"
                             disabled={busyId === r.id}
-                            onClick={() => respond(r.id, true)}
+                            onClick={() => respond(r, true)}
                             title="موافقة"
                           >
                             <Check size={12} />
@@ -138,7 +209,7 @@ export function TeacherRequestsManager() {
                           <button
                             className="btn-mini danger"
                             disabled={busyId === r.id}
-                            onClick={() => respond(r.id, false)}
+                            onClick={() => respond(r, false)}
                             title="رفض"
                           >
                             <XIcon size={12} />
@@ -174,10 +245,18 @@ export function TeacherRequestsManager() {
                   {resolved.map((r) => (
                     <tr key={r.id}>
                       <td>{r.teacherNameAr || "—"}</td>
-                      <td>{typeLabels[r.type]}</td>
+                      <td>
+                        {typeLabels[r.type]}
+                        {r.type === "rate_change" && (
+                          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>{describeRate(r)}</div>
+                        )}
+                      </td>
                       <td>{r.reason}</td>
                       <td>
-                        <span className={`pill-status ${r.status === "approved" ? "pill-approved" : "pill-rejected"}`}>{statusLabels[r.status]}</span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                          <span className={`pill-status ${r.status === "approved" ? "pill-approved" : "pill-rejected"}`}>{statusLabels[r.status]}</span>
+                          {r.type === "rate_change" && rateActivationStatus(r)}
+                        </div>
                       </td>
                       <td style={{ minWidth: 180 }}>
                         {editingId === r.id ? (
@@ -201,7 +280,7 @@ export function TeacherRequestsManager() {
                                 className="btn-mini primary"
                                 disabled={busyId === r.id}
                                 title="حفظ كموافقة"
-                                onClick={() => respond(r.id, true)}
+                                onClick={() => respond(r, true)}
                               >
                                 <Check size={12} />
                               </button>
@@ -209,7 +288,7 @@ export function TeacherRequestsManager() {
                                 className="btn-mini danger"
                                 disabled={busyId === r.id}
                                 title="حفظ كرفض"
-                                onClick={() => respond(r.id, false)}
+                                onClick={() => respond(r, false)}
                               >
                                 <XIcon size={12} />
                               </button>
@@ -227,6 +306,16 @@ export function TeacherRequestsManager() {
                             </>
                           ) : (
                             <>
+                              {r.type === "rate_change" && r.status === "approved" && !r.applied && (
+                                <button
+                                  className="btn-mini primary"
+                                  disabled={busyId === r.id}
+                                  title="فعّل السعر الآن"
+                                  onClick={() => applyNow(r.id)}
+                                >
+                                  <Zap size={12} />
+                                </button>
+                              )}
                               <button
                                 className="btn-mini"
                                 disabled={busyId === r.id}

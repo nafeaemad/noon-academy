@@ -3,10 +3,12 @@ import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { teachers } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyDueRateChanges } from "@/lib/teacher-rate-changes";
 
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
+  await applyDueRateChanges();
   const rows = await db.select().from(teachers);
   return NextResponse.json(rows.map(({ passwordHash: _passwordHash, ...rest }) => rest));
 }
@@ -50,6 +52,7 @@ export async function POST(req: Request) {
       passwordHash,
       meetingLink: body.meetingLink || null,
       ratePerLesson: body.ratePerLesson != null ? String(body.ratePerLesson) : "0",
+      currency: body.currency ? String(body.currency).trim().toUpperCase().slice(0, 10) : "EGP",
       approved: true,
     })
     .returning();

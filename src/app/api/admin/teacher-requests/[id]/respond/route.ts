@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { teacherRequests, teachers, bookings, chatMessages } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
 import { notifyTeacher, notifyUser } from "@/lib/push";
+import { applyRateChange, revertRateChange } from "@/lib/teacher-rate-changes";
 
 async function applyApproveEffects(request: typeof teacherRequests.$inferSelect, teacher: typeof teachers.$inferSelect | undefined) {
   if (request.type === "leave" && teacher) {
@@ -77,6 +78,10 @@ async function revertApproveEffects(request: typeof teacherRequests.$inferSelect
       }
     }
   }
+
+  if (request.type === "rate_change") {
+    await revertRateChange(request, teacher);
+  }
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -107,11 +112,34 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     await applyApproveEffects(request, teacher);
   }
 
+  // Rate-change requests: when approving, the admin chooses how the new price gets activated.
+  const rateFields: Partial<typeof teacherRequests.$inferInsert> = {};
+  if (request.type === "rate_change" && newStatus === "approved") {
+    const activation = body.activation === "now" || body.activation === "scheduled" ? body.activation : "manual";
+    if (activation === "scheduled" && body.effectiveAt) {
+      rateFields.autoActivate = true;
+      rateFields.effectiveAt = new Date(body.effectiveAt);
+      rateFields.applied = false;
+    } else if (activation === "now") {
+      rateFields.autoActivate = false;
+      rateFields.effectiveAt = new Date();
+      rateFields.applied = false;
+    } else {
+      rateFields.autoActivate = false;
+      rateFields.effectiveAt = null;
+      rateFields.applied = false;
+    }
+  }
+
   const [updated] = await db
     .update(teacherRequests)
-    .set({ status: newStatus, adminNote, resolvedAt: new Date() })
+    .set({ status: newStatus, adminNote, resolvedAt: new Date(), ...rateFields })
     .where(eq(teacherRequests.id, requestId))
     .returning();
+
+  if (request.type === "rate_change" && newStatus === "approved" && rateFields.effectiveAt && !rateFields.autoActivate) {
+    await applyRateChange(requestId);
+  }
 
   if (teacher) {
     await notifyTeacher(teacher.id, {

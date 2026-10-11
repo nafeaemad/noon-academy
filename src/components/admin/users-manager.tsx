@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Trash2, KeyRound, X, GraduationCap } from "lucide-react";
+import { toast } from "@/components/toast-provider";
 
 type User = {
   id: number;
@@ -49,7 +50,7 @@ export function UsersManager() {
     if (!input) return;
     const delta = Number(input);
     if (!delta || !Number.isFinite(delta)) {
-      alert("رقم غير صحيح.");
+      toast({ type: "error", title: "رقم غير صحيح" });
       return;
     }
     const res = await fetch(`/api/admin/users/${u.id}/lessons`, {
@@ -59,10 +60,11 @@ export function UsersManager() {
     });
     const data = await res.json();
     if (!res.ok) {
-      alert(data.error || "حدث خطأ");
+      toast({ type: "error", title: "حدث خطأ", message: data.error || undefined });
       return;
     }
     setRows((prev) => prev?.map((row) => (row.id === u.id ? { ...row, lessonBalance: data.lessonBalance } : row)) ?? prev);
+    toast({ type: "success", title: "تم تحديث رصيد الحصص ✓", message: `رصيد ${u.name} الجديد: ${data.lessonBalance} حصة.` });
   }
 
   async function submitReset() {
