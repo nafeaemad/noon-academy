@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq, gt, lte } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
 import { bookings, teachers } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
-/** Confirmed lessons starting in the next 24 hours, with both phone numbers for wa.me reminders. */
+/** Confirmed lessons that have not ended yet (all upcoming, not just today), with both phone numbers for wa.me reminders. */
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -25,7 +25,7 @@ export async function GET() {
     })
     .from(bookings)
     .leftJoin(teachers, eq(bookings.teacherId, teachers.id))
-    .where(and(eq(bookings.status, "confirmed"), gt(bookings.startsAt, new Date(now.getTime() - 30 * 60_000)), lte(bookings.startsAt, new Date(now.getTime() + 24 * 3600_000))))
+    .where(and(eq(bookings.status, "confirmed"), gt(bookings.startsAt, new Date(now.getTime() - 2 * 3600_000))))
     .orderBy(asc(bookings.startsAt));
   return NextResponse.json(rows);
 }

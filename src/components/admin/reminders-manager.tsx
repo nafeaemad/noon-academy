@@ -35,11 +35,11 @@ export function RemindersManager() {
           <ArrowRight style={{ transform: "scaleX(-1)" }} /> رجوع للوحة الرئيسية
         </Link>
         <h1>تذكيرات الحصص (واتساب)</h1>
-        <p className="form-note">حصص الـ 24 ساعة الجاية. اضغط الزر وهيفتح واتساب برسالة جاهزة، وانت بتدوس إرسال.</p>
+        <p className="form-note">كل الحصص المؤكدة الجاية (الأقرب أولًا). اضغط الزر وهيفتح واتساب برسالة جاهزة، وانت بتدوس إرسال.</p>
         {rows === null ? (
           <p className="form-note">جاري التحميل...</p>
         ) : rows.length === 0 ? (
-          <p className="form-note">مفيش حصص مؤكدة في الـ 24 ساعة الجاية.</p>
+          <p className="form-note">مفيش حصص مؤكدة جاية. تأكد إن حالة الحجز "مؤكد" من إدارة الحجوزات.</p>
         ) : (
           <div className="admin-panel admin-table-wrap">
             <table className="admin-table">
@@ -48,7 +48,7 @@ export function RemindersManager() {
               </thead>
               <tbody>
                 {rows.map((r) => {
-                  const time = new Date(r.startsAt).toLocaleString("ar-EG", { weekday: "long", hour: "2-digit", minute: "2-digit", timeZone: r.timezone || "Africa/Cairo" });
+                  const time = new Date(r.startsAt).toLocaleString("ar-EG", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: r.timezone || "Africa/Cairo" });
                   const student = wa(r.studentPhone, `السلام عليكم ${r.studentName} 🌙\nتذكير: حصتك في نون أكاديمي (${r.reference}) بتبدأ ${time}.\nادخل من حسابك بربع ساعة قبلها: ${typeof window !== "undefined" ? window.location.origin : ""}/account`);
                   const teacher = wa(r.teacherPhone, `السلام عليكم ${r.teacherName || ""} 🌙\nتذكير: عندك حصة مع ${r.studentName} (${r.reference}) ${time}.${r.meetingLink ? `\nاللينك: ${r.meetingLink}` : ""}`);
                   return (
