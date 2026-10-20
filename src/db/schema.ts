@@ -79,6 +79,7 @@ export const bookings = pgTable("bookings", {
   status: bookingStatus("status").notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   creditedAt: timestamp("credited_at", { withTimezone: true }),
+  reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
 }, (table) => [uniqueIndex("booking_slot_unique").on(table.startsAt)]);
 
 export const reviews = pgTable("reviews", {

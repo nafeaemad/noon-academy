@@ -6,6 +6,8 @@ import { signOut } from "next-auth/react";
 import { LogOut, Calendar, MessageCircle, Video, GraduationCap, Printer } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
+import { toast } from "./toast-provider";
+import { joinState } from "@/lib/lesson-window";
 
 type Booking = {
   id: number;
@@ -15,7 +17,9 @@ type Booking = {
   status: "pending" | "confirmed" | "cancelled" | "completed";
   teacherNameAr: string | null;
   teacherNameEn: string | null;
-  meetingLink: string | null;
+  duration: number;
+  creditedAt: string | null;
+  hasLink: boolean;
 };
 
 type LessonTx = { id: number; delta: number; reason: string; createdAt: string };
@@ -28,6 +32,7 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [lessonBalance, setLessonBalance] = useState<number | null>(null);
   const [lessonTx, setLessonTx] = useState<LessonTx[]>([]);
+  const [joiningId, setJoiningId] = useState<number | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -44,6 +49,36 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
       .then((r) => r.json())
       .then((rows) => setLessonTx(Array.isArray(rows) ? rows : []));
   }, []);
+
+  async function joinLesson(b: Booking) {
+    // Open the tab synchronously (inside the click) so popup blockers allow it, then point it at the link.
+    const win = window.open("", "_blank");
+    setJoiningId(b.id);
+    try {
+      const res = await fetch(`/api/account/bookings/${b.id}/join`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.meetingLink) {
+        win?.close();
+        toast({ type: "error", title: isArabic ? "تعذر دخول الحصة" : "Couldn't join", message: data.error });
+        return;
+      }
+      if (win) win.location.href = data.meetingLink;
+      else window.location.href = data.meetingLink;
+      if (data.charged) {
+        if (typeof data.lessonBalance === "number") setLessonBalance(data.lessonBalance);
+        setBookings((prev) =>
+          prev ? prev.map((x) => (x.id === b.id ? { ...x, status: "completed", creditedAt: new Date().toISOString() } : x)) : prev,
+        );
+        toast({
+          type: "success",
+          title: isArabic ? "تم احتساب الحصة ✓" : "Lesson counted ✓",
+          message: isArabic ? "اتخصمت حصة من رصيدك. بالتوفيق!" : "One lesson was deducted from your balance.",
+        });
+      }
+    } finally {
+      setJoiningId(null);
+    }
+  }
 
   async function changePassword(e: FormEvent) {
     e.preventDefault();
@@ -131,10 +166,18 @@ export function AccountDashboard({ user }: { user: { name: string; email: string
                           <span className={`pill-status pill-${b.status}`}>{isArabic ? statusLabelAr[b.status] : statusLabelEn[b.status]}</span>
                         </td>
                         <td>
-                          {b.status === "confirmed" && b.meetingLink ? (
-                            <a href={b.meetingLink} target="_blank" rel="noreferrer" className="text-link">
-                              <Video size={14} /> {isArabic ? "دخول الحصة" : "Join"}
-                            </a>
+                          {(b.status === "confirmed" || (b.status === "completed" && b.creditedAt)) && b.hasLink ? (
+                            joinState(b.startsAt, b.duration) === "open" ? (
+                              <button className="btn-mini" disabled={joiningId === b.id} onClick={() => joinLesson(b)}>
+                                <Video size={14} /> {joiningId === b.id ? "..." : isArabic ? "دخول الحصة" : "Join"}
+                              </button>
+                            ) : joinState(b.startsAt, b.duration) === "early" ? (
+                              <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                                {isArabic ? "بيفتح قبل الموعد بربع ساعة" : "Opens 15 min before"}
+                              </span>
+                            ) : (
+                              "—"
+                            )
                           ) : (
                             "—"
                           )}
