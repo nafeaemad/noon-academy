@@ -1,0 +1,16 @@
+export const adminNav = [
+  { title: "الرئيسية", href: "/admin", exact: true },
+  { title: "الحجوزات والمواعيد", href: "/admin/bookings" },
+  { title: "تذكيرات الحصص (واتساب)", href: "/admin/reminders" },
+  { title: "المدرسين", href: "/admin/teachers" },
+  { title: "طلبات المعلمين", href: "/admin/teacher-requests" },
+  { title: "تسوية مدفوعات المعلمين", href: "/admin/payments" },
+  { title: "البرامج والخطط والأسعار", href: "/admin/programs" },
+  { title: "التقييمات", href: "/admin/reviews" },
+  { title: "الشات المباشر", href: "/admin/chats" },
+  { title: "حسابات المستخدمين", href: "/admin/users" },
+  { title: "رسائل التواصل", href: "/admin/messages" },
+  { title: "المقالات", href: "/admin/posts" },
+  { title: "محتوى الصفحات", href: "/admin/content" },
+  { title: "الإعدادات (التواصل والإشعارات)", href: "/admin/settings" },
+] as const;
