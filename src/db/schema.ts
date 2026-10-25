@@ -169,6 +169,8 @@ export const settings = pgTable("settings", {
   facebook: varchar("facebook", { length: 220 }),
   instagram: varchar("instagram", { length: 220 }),
   teachersVisible: boolean("teachers_visible").notNull().default(true),
+  studentReminderMsg: text("student_reminder_msg"),
+  teacherReminderMsg: text("teacher_reminder_msg"),
 });
 
 export const plans = pgTable("plans", {

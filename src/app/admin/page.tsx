@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { count, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { bookings, reviews, teacherRequests } from "@/db/schema";
@@ -9,21 +8,6 @@ import { PushToggle } from "@/components/admin/push-toggle";
 
 export const dynamic = "force-dynamic";
 
-const cards = [
-  { title: "إدارة الحجوزات والمواعيد", desc: "اعرض كل الحجوزات وغيّر حالتها (مؤكد، مكتمل، ملغي).", href: "/admin/bookings" },
-  { title: "إدارة المدرسين", desc: "أضف أو عدّل أو احذف بيانات المدرسين اللي بتظهر في الموقع.", href: "/admin/teachers" },
-  { title: "طلبات المعلمين", desc: "وافق أو ارفض طلبات الإجازة وإلغاء الحصص وتغيير سعر الحصة من المعلمين.", href: "/admin/teacher-requests" },
-  { title: "تسوية مدفوعات المعلمين", desc: "اختار المدرس وسجّل المبلغ اللي استلمه، وهيتضاف لحسابه تلقائيًا.", href: "/admin/payments" },
-  { title: "تذكيرات الحصص (واتساب)", desc: "رسائل واتساب جاهزة للطالب والمدرس قبل الحصة، بضغطة واحدة.", href: "/admin/reminders" },
-  { title: "البرامج والخطط والأسعار", desc: "تحكم في البرامج التعليمية وخطط الأسعار.", href: "/admin/programs" },
-  { title: "التقييمات والموافقة عليها", desc: "وافق أو ارفض تقييمات الطلاب قبل ظهورها بالموقع.", href: "/admin/reviews" },
-  { title: "الشات المباشر", desc: "رد على رسائل الطلاب في الوقت الحقيقي.", href: "/admin/chats" },
-  { title: "حسابات المستخدمين", desc: "احذف أي حساب أو غيّر كلمة مروره.", href: "/admin/users" },
-  { title: "رسائل التواصل", desc: "اقرأ الرسائل اللي بيبعتها الزوار من صفحة تواصل معنا.", href: "/admin/messages" },
-  { title: "المقالات", desc: "أضف أو عدّل أو احذف مقالات المدونة.", href: "/admin/posts" },
-  { title: "محتوى الصفحات", desc: "عدّل نصوص الصفحة الرئيسية وصفحة عن الأكاديمية.", href: "/admin/content" },
-  { title: "التواصل والإشعارات", desc: "رقم الواتساب والإيميل ووقت الرد في كل الموقع.", href: "/admin/settings" },
-];
 
 export default async function AdminPage() {
   const store = await cookies();
@@ -63,17 +47,6 @@ export default async function AdminPage() {
           ))}
         </div>
         <PushToggle />
-        <div className="admin-grid" style={{ marginTop: 26 }}>
-          {cards.map((c, i) => (
-            <Link key={c.href} href={c.href}>
-              <article>
-                <span>0{i + 1}</span>
-                <h2>{c.title}</h2>
-                <p>{c.desc}</p>
-              </article>
-            </Link>
-          ))}
-        </div>
       </div>
     </main>
   );
