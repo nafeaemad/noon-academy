@@ -75,3 +75,22 @@ export function useTeachers() {
 export function usePlans() {
   return usePublicList<DbPlan>("/api/plans");
 }
+
+export type DbPricingItem = {
+  id: number;
+  kind: "row" | "course";
+  titleAr: string;
+  titleEn: string;
+  col2Ar: string;
+  col2En: string;
+  descAr: string;
+  descEn: string;
+  price: string;
+  currency: string;
+  unitAr: string;
+  unitEn: string;
+};
+
+export function usePricingItems() {
+  return usePublicList<DbPricingItem>("/api/pricing");
+}

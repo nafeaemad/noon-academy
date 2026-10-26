@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
-import { usePlans } from "@/lib/use-public-data";
+import { usePlans, usePricingItems } from "@/lib/use-public-data";
 
 function formatPrice(price: string, currency: string) {
   const n = Number(price);
@@ -11,16 +11,12 @@ function formatPrice(price: string, currency: string) {
   return currency === "USD" ? `$${value}` : `${value} ${currency}`;
 }
 
-const monthlyRows = [
-  { ar: "حصتان / أسبوع", en: "2 Classes / Week", lessons: 8, fee: 28 },
-  { ar: "3 حصص / أسبوع", en: "3 Classes / Week", lessons: 12, fee: 43 },
-  { ar: "4 حصص / أسبوع", en: "4 Classes / Week", lessons: 16, fee: 56 },
-  { ar: "5 حصص / أسبوع", en: "5 Classes / Week", lessons: 20, fee: 70 },
-];
-
 export function PricingPage() {
   const { isArabic } = useLanguage();
   const { data: plans } = usePlans();
+  const { data: items } = usePricingItems();
+  const rows = items.filter((i) => i.kind === "row");
+  const courses = items.filter((i) => i.kind === "course");
   return (
     <main>
       <PageHero
@@ -34,50 +30,46 @@ export function PricingPage() {
       />
       <section className="page-content">
         <div className="container">
-          <div className="price-table-wrap">
-            <table className="price-table">
-              <thead>
-                <tr>
-                  <th>{isArabic ? "الجدول / الأسبوع" : "Schedule / Week"}</th>
-                  <th>{isArabic ? "عدد الحصص في الشهر" : "Classes per Month"}</th>
-                  <th>{isArabic ? "الرسوم" : "Fee"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthlyRows.map((r) => (
-                  <tr key={r.en}>
-                    <td>{isArabic ? r.ar : r.en}</td>
-                    <td>{String(r.lessons).padStart(2, "0")} / {isArabic ? "شهر" : "Month"}</td>
-                    <td>${r.fee} / {isArabic ? "شهر" : "Month"}</td>
+          {rows.length > 0 && (
+            <div className="price-table-wrap">
+              <table className="price-table">
+                <thead>
+                  <tr>
+                    <th>{isArabic ? "الجدول / الأسبوع" : "Schedule / Week"}</th>
+                    <th>{isArabic ? "عدد الحصص في الشهر" : "Classes per Month"}</th>
+                    <th>{isArabic ? "الرسوم" : "Fee"}</th>
                   </tr>
-                ))}
-                <tr>
-                  <td>{isArabic ? "حصص الحفظ (بالساعة)" : "Hifz Classes (hour)"}</td>
-                  <td>20 {isArabic ? "ساعة" : "h"} / {isArabic ? "شهر" : "Month"}</td>
-                  <td>$125 / {isArabic ? "شهر" : "Month"}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <article className="price-card featured quranic-card">
-            <span className="badge">{isArabic ? "كورس جديد" : "NEW COURSE"}</span>
-            <h3>Quranic Arabic</h3>
-            <p style={{ margin: "6px 0 12px" }}>
-              {isArabic
-                ? "كورس يفهم فيه الطالب حوالي 50٪ من كلمات القرآن الكريم."
-                : "A course that helps the student understand about 50% of the words of the Quran."}
-            </p>
-            <div className="price">
-              $8
-              <small style={{ fontSize: 11 }}> / {isArabic ? "حصة" : "lesson"}</small>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.id}>
+                      <td>{isArabic ? r.titleAr : r.titleEn}</td>
+                      <td>{isArabic ? r.col2Ar : r.col2En}</td>
+                      <td>
+                        {formatPrice(r.price, r.currency)} {isArabic ? r.unitAr : r.unitEn}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <p>{isArabic ? "مدة الحصة 30 دقيقة" : "30-minute lessons"}</p>
-            <Link href="/booking" className="button button-primary" style={{ width: "100%" }}>
-              <Check />
-              {isArabic ? "احجز الآن" : "Book now"}
-            </Link>
-          </article>
+          )}
+
+          {courses.map((c) => (
+            <article key={c.id} className="price-card featured quranic-card">
+              <h3>{isArabic ? c.titleAr : c.titleEn}</h3>
+              {(isArabic ? c.descAr : c.descEn) && <p style={{ margin: "6px 0 12px" }}>{isArabic ? c.descAr : c.descEn}</p>}
+              <div className="price">
+                {formatPrice(c.price, c.currency)}
+                <small style={{ fontSize: 11 }}> {isArabic ? c.unitAr : c.unitEn}</small>
+              </div>
+              <p>{isArabic ? c.col2Ar : c.col2En}</p>
+              <Link href="/booking" className="button button-primary" style={{ width: "100%" }}>
+                <Check />
+                {isArabic ? "احجز الآن" : "Book now"}
+              </Link>
+            </article>
+          ))}
 
           {plans.length ? (
             <div className="price-grid">

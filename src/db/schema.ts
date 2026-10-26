@@ -252,3 +252,23 @@ export const teacherRequests = pgTable("teacher_requests", {
   effectiveAt: timestamp("effective_at", { withTimezone: true }),
   applied: boolean("applied").notNull().default(false),
 });
+
+// Public pricing page content, editable from the admin panel.
+// kind "row": a line of the monthly table (title = schedule, col2 = classes per month).
+// kind "course": a highlighted course card (title = name, desc = description, col2 = lesson length line).
+export const pricingItems = pgTable("pricing_items", {
+  id: serial("id").primaryKey(),
+  kind: varchar("kind", { length: 10 }).notNull().default("row"),
+  titleAr: varchar("title_ar", { length: 160 }).notNull(),
+  titleEn: varchar("title_en", { length: 160 }).notNull(),
+  col2Ar: varchar("col2_ar", { length: 160 }).notNull().default(""),
+  col2En: varchar("col2_en", { length: 160 }).notNull().default(""),
+  descAr: text("desc_ar").notNull().default(""),
+  descEn: text("desc_en").notNull().default(""),
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 8 }).notNull().default("USD"),
+  unitAr: varchar("unit_ar", { length: 60 }).notNull().default(""),
+  unitEn: varchar("unit_en", { length: 60 }).notNull().default(""),
+  sort: integer("sort").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+});

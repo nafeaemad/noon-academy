@@ -5,6 +5,7 @@ export const adminNav = [
   { title: "المدرسين", href: "/admin/teachers" },
   { title: "طلبات المعلمين", href: "/admin/teacher-requests" },
   { title: "تسوية مدفوعات المعلمين", href: "/admin/payments" },
+  { title: "صفحة الأسعار (الجدول والكورسات)", href: "/admin/pricing" },
   { title: "البرامج والخطط والأسعار", href: "/admin/programs" },
   { title: "التقييمات", href: "/admin/reviews" },
   { title: "الشات المباشر", href: "/admin/chats" },
