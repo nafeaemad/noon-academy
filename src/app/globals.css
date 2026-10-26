@@ -104,3 +104,11 @@
   .admin-sidebar.open{display:block}
 }
 @media print{.admin-sidebar,.admin-side-toggle{display:none!important}.admin-shell{display:block}}
+
+/* Pricing table */
+.price-table-wrap{overflow-x:auto;margin:0 auto 28px;max-width:760px;border-radius:10px;border:1px solid var(--line)}
+.price-table{width:100%;border-collapse:collapse;background:#fff;text-align:center;font-size:15px}
+.price-table th{background:#b08a49;color:#fff;padding:14px 10px;font-weight:700}
+.price-table td{padding:14px 10px;border-top:1px solid var(--line)}
+.price-table tbody tr:nth-child(even){background:#f7f7f4}
+.quranic-card{max-width:420px;margin:0 auto 34px}
