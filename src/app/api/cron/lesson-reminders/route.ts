@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { bookings, teachers } from "@/db/schema";
 import { notifyTeacher, notifyUser } from "@/lib/push";
 import { sendLessonReminder } from "@/lib/whatsapp";
+import { TEACHER_TZ } from "@/lib/reminder-templates";
 
 export const dynamic = "force-dynamic";
 
@@ -39,13 +40,15 @@ async function run(req: Request) {
     if (!claimed) continue;
 
     const mins = Math.max(1, Math.round((booking.startsAt.getTime() - now.getTime()) / 60_000));
-    const time = booking.startsAt.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit", timeZone: booking.timezone || "Africa/Cairo" });
+    const fmt = (tz: string) => booking.startsAt.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit", timeZone: tz });
+    const time = fmt(booking.timezone || TEACHER_TZ); // student sees their own clock
+    const teacherTime = fmt(TEACHER_TZ); // teacher sees the academy (Cairo) clock
     const studentLink = `${site}/account`;
     const teacherLink = teacher.meetingLink || `${site}/teacher`;
 
     await Promise.all([
       sendLessonReminder(booking.whatsapp, { name: booking.name, time, link: studentLink }),
-      teacher.phone ? sendLessonReminder(teacher.phone, { name: teacher.nameAr, time, link: teacherLink }) : Promise.resolve(),
+      teacher.phone ? sendLessonReminder(teacher.phone, { name: teacher.nameAr, time: teacherTime, link: teacherLink }) : Promise.resolve(),
       booking.userId
         ? notifyUser(booking.userId, {
             title: "حصتك بتبدأ بعد شوية ⏰",

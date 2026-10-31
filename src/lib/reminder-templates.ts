@@ -1,3 +1,6 @@
+/** Teachers work on the academy clock. */
+export const TEACHER_TZ = "Africa/Cairo";
+
 export const DEFAULT_STUDENT_MSG =
   "السلام عليكم {الاسم} 🌙\nتذكير: حصتك في نون أكاديمي ({المرجع}) مع {الطرف_الآخر} بتبدأ {الموعد}.\nادخل من حسابك بربع ساعة قبلها: {اللينك}";
 export const DEFAULT_TEACHER_MSG =

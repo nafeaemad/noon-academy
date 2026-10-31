@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import { normalizePhone } from "@/lib/phone";
 import { toast } from "@/components/toast-provider";
-import { DEFAULT_STUDENT_MSG, DEFAULT_TEACHER_MSG, PLACEHOLDERS, fillTemplate } from "@/lib/reminder-templates";
+import { DEFAULT_STUDENT_MSG, DEFAULT_TEACHER_MSG, PLACEHOLDERS, TEACHER_TZ, fillTemplate } from "@/lib/reminder-templates";
 
 type Row = {
   id: number;
@@ -104,19 +104,22 @@ export function RemindersManager() {
           <div className="admin-panel admin-table-wrap">
             <table className="admin-table">
               <thead>
-                <tr><th>الموعد</th><th>الطالب</th><th>المدرس</th><th>تذكير</th></tr>
+                <tr><th>الموعد (توقيت الطالب)</th><th>الموعد (القاهرة)</th><th>الطالب</th><th>المدرس</th><th>تذكير</th></tr>
               </thead>
               <tbody>
                 {rows.map((r) => {
-                  const time = new Date(r.startsAt).toLocaleString("ar-EG", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: r.timezone || "Africa/Cairo" });
+                  const fmt = (tz: string) => new Date(r.startsAt).toLocaleString("ar-EG", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: tz });
+                  const time = fmt(r.timezone || TEACHER_TZ);
+                  const cairoTime = fmt(TEACHER_TZ);
                   const studentTpl = saved.student ?? DEFAULT_STUDENT_MSG;
                   const teacherTpl = saved.teacher ?? DEFAULT_TEACHER_MSG;
                   const origin = typeof window !== "undefined" ? window.location.origin : "";
                   const student = wa(r.studentPhone, fillTemplate(studentTpl, { name: r.studentName, other: r.teacherName || "المدرس", time, ref: r.reference, link: `${origin}/account` }));
-                  const teacher = wa(r.teacherPhone, fillTemplate(teacherTpl, { name: r.teacherName || "", other: r.studentName, time, ref: r.reference, link: r.meetingLink || `${origin}/teacher` }));
+                  const teacher = wa(r.teacherPhone, fillTemplate(teacherTpl, { name: r.teacherName || "", other: r.studentName, time: cairoTime, ref: r.reference, link: r.meetingLink || `${origin}/teacher` }));
                   return (
                     <tr key={r.id}>
-                      <td>{time}</td>
+                      <td>{time}<br /><small style={{ color: "var(--muted)" }}>{r.timezone}</small></td>
+                      <td>{cairoTime}</td>
                       <td>{r.studentName}</td>
                       <td>{r.teacherName || "—"}</td>
                       <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
