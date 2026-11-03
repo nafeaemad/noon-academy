@@ -145,3 +145,9 @@
 .price-off{display:inline-block;margin-inline-start:6px;padding:2px 8px;border-radius:20px;background:linear-gradient(90deg,#c7a76b,#e5c98e);color:#0c3b2e;font-size:11px;font-weight:800;direction:ltr;vertical-align:middle}
 .program-card{position:relative}
 .program-ribbon{position:absolute;top:14px;inset-inline-end:14px;padding:5px 12px;border-radius:20px;background:linear-gradient(90deg,#b08a49,#e5c98e);color:#0c3b2e;font-size:12px;font-weight:800;box-shadow:0 6px 16px rgba(176,138,73,.4);animation:discountPulse 2.4s ease-in-out infinite;direction:ltr}
+.discount-note{margin:8px 0 0;padding:7px 11px;border-radius:9px;background:linear-gradient(90deg,#fff6df,#fdeec4);border:1px solid #ecd391;color:#7a5a1c;font-size:12px;font-weight:700}
+.quote-box{margin-top:10px;padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,#f3faf6,#fff8e8);border:1px solid #cfe3d8;font-size:14px}
+.quote-box .q-row{display:flex;justify-content:space-between;gap:10px;padding:3px 0}
+.quote-box .q-off{color:#0c7a4f;font-weight:700}
+.quote-box .q-total{margin-top:6px;padding-top:8px;border-top:1px dashed #b9cfc4;font-size:18px;font-weight:800;color:#0c3b2e}
+.quote-box .q-old{text-decoration:line-through;color:#98a49f}

@@ -15,6 +15,11 @@ export const programs = pgTable("programs", {
   ageAr: varchar("age_ar", { length: 80 }).notNull(),
   ageEn: varchar("age_en", { length: 80 }).notNull(),
   duration: integer("duration"),
+  discountType: varchar("discount_type", { length: 10 }),
+  discountValue: numeric("discount_value", { precision: 10, scale: 2 }),
+  discountNoteAr: text("discount_note_ar"),
+  discountNoteEn: text("discount_note_en"),
+  discountEndsAt: timestamp("discount_ends_at", { withTimezone: true }),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
 });
@@ -80,6 +85,13 @@ export const bookings = pgTable("bookings", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   creditedAt: timestamp("credited_at", { withTimezone: true }),
   reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
+  // Price snapshot taken when the booking is made (the discount is applied server-side).
+  planId: integer("plan_id"),
+  originalPrice: numeric("original_price", { precision: 10, scale: 2 }),
+  discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }),
+  finalPrice: numeric("final_price", { precision: 10, scale: 2 }),
+  priceCurrency: varchar("price_currency", { length: 8 }),
+  discountLabel: varchar("discount_label", { length: 200 }),
 }, (table) => [uniqueIndex("booking_slot_unique").on(table.startsAt)]);
 
 export const reviews = pgTable("reviews", {
@@ -181,6 +193,11 @@ export const plans = pgTable("plans", {
   duration: integer("duration"),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 8 }).notNull().default("USD"),
+  discountType: varchar("discount_type", { length: 10 }),
+  discountValue: numeric("discount_value", { precision: 10, scale: 2 }),
+  discountNoteAr: text("discount_note_ar"),
+  discountNoteEn: text("discount_note_en"),
+  discountEndsAt: timestamp("discount_ends_at", { withTimezone: true }),
   active: boolean("active").notNull().default(true),
 });
 

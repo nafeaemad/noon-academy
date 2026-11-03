@@ -24,6 +24,11 @@ type Booking = {
   status: "pending" | "confirmed" | "cancelled" | "completed";
   createdAt: string;
   creditedAt: string | null;
+  originalPrice: string | null;
+  discountAmount: string | null;
+  finalPrice: string | null;
+  priceCurrency: string | null;
+  discountLabel: string | null;
 };
 
 type Teacher = { id: number; nameAr: string; nameEn: string; meetingLink: string | null };
@@ -237,7 +242,16 @@ export function BookingsManager() {
                   <tr key={b.id}>
                     <td>{b.reference}</td>
                     <td>{b.name}</td>
-                    <td>{b.program}</td>
+                    <td>
+                      {b.program}
+                      {b.finalPrice && (
+                        <div style={{ fontSize: 12, color: "#0c7a4f", fontWeight: 700 }}>
+                          {Number(b.finalPrice)} {b.priceCurrency}
+                          {Number(b.discountAmount) > 0 && <span style={{ color: "#98a49f", textDecoration: "line-through", marginInlineStart: 6 }}>{Number(b.originalPrice)}</span>}
+                          {b.discountLabel && <div style={{ color: "#8a6a2c", fontWeight: 400 }}>{b.discountLabel}</div>}
+                        </div>
+                      )}
+                    </td>
                     <td>{new Date(b.startsAt).toLocaleString("ar-EG")}</td>
                     <td>{teacherName(b.teacherId) || "—"}</td>
                     <td>

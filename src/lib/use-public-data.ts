@@ -15,6 +15,11 @@ export type DbProgram = {
   ageAr: string;
   ageEn: string;
   duration: number | null;
+  discountType: string | null;
+  discountValue: string | null;
+  discountNoteAr: string | null;
+  discountNoteEn: string | null;
+  discountEndsAt: string | null;
 };
 
 export type DbTeacher = {
@@ -38,6 +43,11 @@ export type DbPlan = {
   nameEn: string;
   lessonCount: number;
   duration: number | null;
+  discountType: string | null;
+  discountValue: string | null;
+  discountNoteAr: string | null;
+  discountNoteEn: string | null;
+  discountEndsAt: string | null;
   price: string;
   currency: string;
 };

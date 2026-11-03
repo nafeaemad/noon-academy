@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { programs } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
+import { itemDiscountValues } from "@/lib/item-discount";
 
 export async function GET() {
   const denied = await requireAdmin();
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
       ageAr: body.ageAr,
       ageEn: body.ageEn,
       duration: Number(body.duration) > 0 ? Number(body.duration) : null, // optional: empty = not shown on the site
+      ...itemDiscountValues(body),
       active: Boolean(body.active),
       sortOrder: Number(body.sortOrder) || 0,
     })

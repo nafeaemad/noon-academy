@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { plans } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
+import { itemDiscountValues } from "@/lib/item-discount";
 
 export async function GET() {
   const denied = await requireAdmin();
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
       duration: Number(body.duration) > 0 ? Number(body.duration) : null,
       price: String(body.price ?? "0"),
       currency: body.currency || "USD",
+      ...itemDiscountValues(body),
       active: Boolean(body.active),
     })
     .returning();

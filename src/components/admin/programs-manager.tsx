@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, Plus, Pencil, Trash2, X } from "lucide-react";
+import { ItemDiscountFields, discountFormFrom, discountPayload, noDiscount } from "./item-discount-fields";
 
 type Program = {
   id: number;
@@ -16,6 +17,11 @@ type Program = {
   ageAr: string;
   ageEn: string;
   duration: number | null;
+  discountType: string | null;
+  discountValue: string | null;
+  discountNoteAr: string | null;
+  discountNoteEn: string | null;
+  discountEndsAt: string | null;
   active: boolean;
   sortOrder: number;
 };
@@ -26,6 +32,11 @@ type Plan = {
   nameEn: string;
   lessonCount: number;
   duration: number | null;
+  discountType: string | null;
+  discountValue: string | null;
+  discountNoteAr: string | null;
+  discountNoteEn: string | null;
+  discountEndsAt: string | null;
   price: string;
   currency: string;
   active: boolean;
@@ -42,6 +53,7 @@ const emptyProgram = {
   ageAr: "",
   ageEn: "",
   duration: "",
+  ...noDiscount,
   active: true,
   sortOrder: "0",
 };
@@ -53,6 +65,7 @@ const emptyPlan = {
   duration: "",
   price: "0",
   currency: "USD",
+  ...noDiscount,
   active: true,
 };
 
@@ -94,6 +107,7 @@ export function ProgramsManager() {
       ageAr: p.ageAr,
       ageEn: p.ageEn,
       duration: p.duration ? String(p.duration) : "",
+      ...discountFormFrom(p),
       active: p.active,
       sortOrder: String(p.sortOrder),
     });
@@ -103,7 +117,7 @@ export function ProgramsManager() {
     e.preventDefault();
     const method = editingProgram === "new" ? "POST" : "PATCH";
     const url = editingProgram === "new" ? "/api/admin/programs" : `/api/admin/programs/${editingProgram}`;
-    await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(programForm) });
+    await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify({ ...programForm, ...discountPayload(programForm) }) });
     setEditingProgram(null);
     loadPrograms();
   }
@@ -125,6 +139,7 @@ export function ProgramsManager() {
       duration: p.duration ? String(p.duration) : "",
       price: p.price,
       currency: p.currency,
+      ...discountFormFrom(p),
       active: p.active,
     });
     setEditingPlan(p.id);
@@ -133,7 +148,7 @@ export function ProgramsManager() {
     e.preventDefault();
     const method = editingPlan === "new" ? "POST" : "PATCH";
     const url = editingPlan === "new" ? "/api/admin/plans" : `/api/admin/plans/${editingPlan}`;
-    await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(planForm) });
+    await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify({ ...planForm, ...discountPayload(planForm) }) });
     setEditingPlan(null);
     loadPlans();
   }
@@ -184,6 +199,7 @@ export function ProgramsManager() {
                   <div className="field"><label>الفئة العمرية (عربي)</label><input required value={programForm.ageAr} onChange={(e) => setProgramForm({ ...programForm, ageAr: e.target.value })} /></div>
                   <div className="field"><label>Age (English)</label><input required value={programForm.ageEn} onChange={(e) => setProgramForm({ ...programForm, ageEn: e.target.value })} /></div>
                   <div className="field"><label>ترتيب الظهور</label><input type="number" value={programForm.sortOrder} onChange={(e) => setProgramForm({ ...programForm, sortOrder: e.target.value })} /></div>
+                  <ItemDiscountFields value={programForm} onChange={(patch) => setProgramForm({ ...programForm, ...patch })} />
                   <div className="field"><label className="toggle-row"><input type="checkbox" checked={programForm.active} onChange={(e) => setProgramForm({ ...programForm, active: e.target.checked })} /> ظاهر في الموقع</label></div>
                 </div>
                 <div className="save-bar"><button className="button button-primary" type="submit">حفظ</button></div>
@@ -243,6 +259,7 @@ export function ProgramsManager() {
                   <div className="field"><label>مدة الحصة (دقائق) — اختياري، لو فاضية مش هتظهر</label><input type="number" value={planForm.duration} onChange={(e) => setPlanForm({ ...planForm, duration: e.target.value })} /></div>
                   <div className="field"><label>السعر</label><input type="number" step="0.01" value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })} /></div>
                   <div className="field"><label>العملة</label><input value={planForm.currency} onChange={(e) => setPlanForm({ ...planForm, currency: e.target.value })} /></div>
+                  <ItemDiscountFields value={planForm} onChange={(patch) => setPlanForm({ ...planForm, ...patch })} />
                   <div className="field"><label className="toggle-row"><input type="checkbox" checked={planForm.active} onChange={(e) => setPlanForm({ ...planForm, active: e.target.checked })} /> ظاهرة في الموقع</label></div>
                 </div>
                 <div className="save-bar"><button className="button button-primary" type="submit">حفظ</button></div>

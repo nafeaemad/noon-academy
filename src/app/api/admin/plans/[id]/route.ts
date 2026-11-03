@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { plans } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
+import { itemDiscountValues } from "@/lib/item-discount";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireAdmin();
@@ -18,6 +19,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       duration: Number(body.duration) > 0 ? Number(body.duration) : null,
       price: String(body.price ?? "0"),
       currency: body.currency || "USD",
+      ...itemDiscountValues(body),
       active: Boolean(body.active),
     })
     .where(eq(plans.id, Number(id)))

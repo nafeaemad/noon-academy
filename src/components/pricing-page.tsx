@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
 import { usePlans, usePricingItems, useDiscount } from "@/lib/use-public-data";
-import { discounted, discountBadge } from "@/lib/discount";
+import { itemRule, siteRule, pickBest, ruleBadge, isLive, type DiscountRule } from "@/lib/discount";
 
 function formatPrice(price: string, currency: string) {
   const n = Number(price);
@@ -14,17 +14,18 @@ function formatPrice(price: string, currency: string) {
 
 export function PricingPage() {
   const { discount } = useDiscount();
-  // Shows "$56" or, when a discount is live, "<old> -> <new> [-20%]".
-  const priceView = (price: string, currency: string) =>
-    discount ? (
+  // Shows "$56" or, when a discount applies (site-wide or the item's own, whichever saves more), "<old> <new> [-20%]".
+  const priceView = (price: string, currency: string, own?: DiscountRule | null) => {
+    const best = pickBest(Number(price), [siteRule(discount), own]);
+    if (!best) return formatPrice(price, currency);
+    return (
       <>
         <span className="price-old">{formatPrice(price, currency)}</span>
-        <span className="price-new">{formatPrice(String(discounted(Number(price), discount)), currency)}</span>
-        <span className="price-off">{discountBadge(discount, currency)}</span>
+        <span className="price-new">{formatPrice(String(best.final), currency)}</span>
+        <span className="price-off">{ruleBadge(best.rule, currency)}</span>
       </>
-    ) : (
-      formatPrice(price, currency)
     );
+  };
   const { isArabic } = useLanguage();
   const { data: plans } = usePlans();
   const { data: items } = usePricingItems();
@@ -93,9 +94,14 @@ export function PricingPage() {
                     {featured && <span className="badge">{isArabic ? "الأكثر اختيارًا" : "MOST POPULAR"}</span>}
                     <h3>{isArabic ? x.nameAr : x.nameEn}</h3>
                     <div className="price">
-                      {priceView(x.price, x.currency)}
+                      {priceView(x.price, x.currency, itemRule(x, "plan"))}
                       <small style={{ fontSize: 11 }}>{i ? " / " + (isArabic ? "شهر" : "month") : ""}</small>
                     </div>
+                    {(() => {
+                      const own = itemRule(x, "plan");
+                      const note = isArabic ? x.discountNoteAr : x.discountNoteEn;
+                      return isLive(own) && note ? <p className="discount-note">🎁 {note}</p> : null;
+                    })()}
                     <p>
                       {x.lessonCount} {isArabic ? "حصة" : "lessons"}
                       {x.duration ? ` · ${x.duration} ${isArabic ? "دقيقة" : "min"}` : ""}
