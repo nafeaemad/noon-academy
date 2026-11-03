@@ -95,13 +95,13 @@ export function PricingPage() {
                     <h3>{isArabic ? x.nameAr : x.nameEn}</h3>
                     <div className="price">
                       {priceView(x.price, x.currency, itemRule(x, "plan"))}
+                      {(() => {
+                        const own = itemRule(x, "plan");
+                        const note = isArabic ? x.discountNoteAr : x.discountNoteEn;
+                        return isLive(own) && note ? <span className="price-note">🎁 {note}</span> : null;
+                      })()}
                       <small style={{ fontSize: 11 }}>{i ? " / " + (isArabic ? "شهر" : "month") : ""}</small>
                     </div>
-                    {(() => {
-                      const own = itemRule(x, "plan");
-                      const note = isArabic ? x.discountNoteAr : x.discountNoteEn;
-                      return isLive(own) && note ? <p className="discount-note">🎁 {note}</p> : null;
-                    })()}
                     <p>
                       {x.lessonCount} {isArabic ? "حصة" : "lessons"}
                       {x.duration ? ` · ${x.duration} ${isArabic ? "دقيقة" : "min"}` : ""}
