@@ -15,7 +15,7 @@ type Program = {
   levelEn: string;
   ageAr: string;
   ageEn: string;
-  duration: number;
+  duration: number | null;
   active: boolean;
   sortOrder: number;
 };
@@ -41,7 +41,7 @@ const emptyProgram = {
   levelEn: "",
   ageAr: "",
   ageEn: "",
-  duration: "30",
+  duration: "",
   active: true,
   sortOrder: "0",
 };
@@ -93,7 +93,7 @@ export function ProgramsManager() {
       levelEn: p.levelEn,
       ageAr: p.ageAr,
       ageEn: p.ageEn,
-      duration: String(p.duration),
+      duration: p.duration ? String(p.duration) : "",
       active: p.active,
       sortOrder: String(p.sortOrder),
     });
@@ -174,7 +174,7 @@ export function ProgramsManager() {
                 </div>
                 <div className="form-grid">
                   <div className="field"><label>المعرف (slug, إنجليزي بدون مسافات)</label><input required value={programForm.slug} onChange={(e) => setProgramForm({ ...programForm, slug: e.target.value })} /></div>
-                  <div className="field"><label>مدة الحصة (بالدقائق)</label><input type="number" value={programForm.duration} onChange={(e) => setProgramForm({ ...programForm, duration: e.target.value })} /></div>
+                  <div className="field"><label>مدة الحصة (بالدقائق) — اختياري، لو فاضية مش هتظهر</label><input type="number" value={programForm.duration} onChange={(e) => setProgramForm({ ...programForm, duration: e.target.value })} /></div>
                   <div className="field"><label>العنوان (عربي)</label><input required value={programForm.titleAr} onChange={(e) => setProgramForm({ ...programForm, titleAr: e.target.value })} /></div>
                   <div className="field"><label>Title (English)</label><input required value={programForm.titleEn} onChange={(e) => setProgramForm({ ...programForm, titleEn: e.target.value })} /></div>
                   <div className="field full"><label>الوصف (عربي)</label><textarea required value={programForm.descriptionAr} onChange={(e) => setProgramForm({ ...programForm, descriptionAr: e.target.value })} /></div>
@@ -204,7 +204,7 @@ export function ProgramsManager() {
                         <td>{p.titleAr}</td>
                         <td>{p.levelAr}</td>
                         <td>{p.ageAr}</td>
-                        <td>{p.duration} دقيقة</td>
+                        <td>{p.duration ? `${p.duration} دقيقة` : "—"}</td>
                         <td><span className={`pill-status ${p.active ? "pill-approved" : "pill-rejected"}`}>{p.active ? "ظاهر" : "مخفي"}</span></td>
                         <td>
                           <div className="admin-actions">

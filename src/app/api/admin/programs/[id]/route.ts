@@ -21,7 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       levelEn: body.levelEn,
       ageAr: body.ageAr,
       ageEn: body.ageEn,
-      duration: Number(body.duration) || 30,
+      duration: Number(body.duration) > 0 ? Number(body.duration) : null, // optional: empty = not shown on the site
       active: Boolean(body.active),
       sortOrder: Number(body.sortOrder) || 0,
     })

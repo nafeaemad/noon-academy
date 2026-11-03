@@ -14,7 +14,7 @@ export const programs = pgTable("programs", {
   levelEn: varchar("level_en", { length: 120 }).notNull(),
   ageAr: varchar("age_ar", { length: 80 }).notNull(),
   ageEn: varchar("age_en", { length: 80 }).notNull(),
-  duration: integer("duration").notNull().default(30),
+  duration: integer("duration"),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
 });

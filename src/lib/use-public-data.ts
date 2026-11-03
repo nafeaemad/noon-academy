@@ -13,7 +13,7 @@ export type DbProgram = {
   levelEn: string;
   ageAr: string;
   ageEn: string;
-  duration: number;
+  duration: number | null;
 };
 
 export type DbTeacher = {
