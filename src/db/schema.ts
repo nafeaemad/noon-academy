@@ -272,3 +272,19 @@ export const pricingItems = pgTable("pricing_items", {
   sort: integer("sort").notNull().default(0),
   active: boolean("active").notNull().default(true),
 });
+
+// Site-wide discount offer. The first active one (lowest sort, inside its date range) is applied to every
+// price on the site and shown as a banner and as a badge on program cards.
+export const discounts = pgTable("discounts", {
+  id: serial("id").primaryKey(),
+  type: varchar("type", { length: 10 }).notNull().default("percent"), // "percent" | "fixed"
+  value: numeric("value", { precision: 10, scale: 2 }).notNull(),
+  labelAr: varchar("label_ar", { length: 160 }).notNull().default(""),
+  labelEn: varchar("label_en", { length: 160 }).notNull().default(""),
+  messageAr: text("message_ar").notNull().default(""),
+  messageEn: text("message_en").notNull().default(""),
+  startsAt: timestamp("starts_at", { withTimezone: true }),
+  endsAt: timestamp("ends_at", { withTimezone: true }),
+  sort: integer("sort").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+});

@@ -1,5 +1,6 @@
 "use client";
 
+import type { Discount } from "@/lib/discount";
 import { useEffect, useState } from "react";
 
 export type DbProgram = {
@@ -93,4 +94,10 @@ export type DbPricingItem = {
 
 export function usePricingItems() {
   return usePublicList<DbPricingItem>("/api/pricing");
+}
+
+/** The discount currently live on the site (first active one in its date range), or null. */
+export function useDiscount() {
+  const { data, loading } = usePublicList<Discount>("/api/discounts");
+  return { discount: data[0] ?? null, loading };
 }

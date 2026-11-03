@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
-import { usePlans, usePricingItems } from "@/lib/use-public-data";
+import { usePlans, usePricingItems, useDiscount } from "@/lib/use-public-data";
+import { discounted, discountBadge } from "@/lib/discount";
 
 function formatPrice(price: string, currency: string) {
   const n = Number(price);
@@ -12,6 +13,18 @@ function formatPrice(price: string, currency: string) {
 }
 
 export function PricingPage() {
+  const { discount } = useDiscount();
+  // Shows "$56" or, when a discount is live, "<old> -> <new> [-20%]".
+  const priceView = (price: string, currency: string) =>
+    discount ? (
+      <>
+        <span className="price-old">{formatPrice(price, currency)}</span>
+        <span className="price-new">{formatPrice(String(discounted(Number(price), discount)), currency)}</span>
+        <span className="price-off">{discountBadge(discount, currency)}</span>
+      </>
+    ) : (
+      formatPrice(price, currency)
+    );
   const { isArabic } = useLanguage();
   const { data: plans } = usePlans();
   const { data: items } = usePricingItems();
@@ -46,7 +59,7 @@ export function PricingPage() {
                       <td>{isArabic ? r.titleAr : r.titleEn}</td>
                       <td>{isArabic ? r.col2Ar : r.col2En}</td>
                       <td>
-                        {formatPrice(r.price, r.currency)} {isArabic ? r.unitAr : r.unitEn}
+                        {priceView(r.price, r.currency)} {isArabic ? r.unitAr : r.unitEn}
                       </td>
                     </tr>
                   ))}
@@ -60,7 +73,7 @@ export function PricingPage() {
               <h3>{isArabic ? c.titleAr : c.titleEn}</h3>
               {(isArabic ? c.descAr : c.descEn) && <p style={{ margin: "6px 0 12px" }}>{isArabic ? c.descAr : c.descEn}</p>}
               <div className="price">
-                {formatPrice(c.price, c.currency)}
+                {priceView(c.price, c.currency)}
                 <small style={{ fontSize: 11 }}> {isArabic ? c.unitAr : c.unitEn}</small>
               </div>
               <p>{isArabic ? c.col2Ar : c.col2En}</p>
@@ -80,7 +93,7 @@ export function PricingPage() {
                     {featured && <span className="badge">{isArabic ? "الأكثر اختيارًا" : "MOST POPULAR"}</span>}
                     <h3>{isArabic ? x.nameAr : x.nameEn}</h3>
                     <div className="price">
-                      {formatPrice(x.price, x.currency)}
+                      {priceView(x.price, x.currency)}
                       <small style={{ fontSize: 11 }}>{i ? " / " + (isArabic ? "شهر" : "month") : ""}</small>
                     </div>
                     <p>
