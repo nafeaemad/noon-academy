@@ -52,25 +52,35 @@ export type DbPlan = {
   currency: string;
 };
 
-function usePublicList<T>(url: string) {
+function usePublicList<T>(url: string, refreshMs?: number) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    fetch(url)
-      .then((r) => r.json())
-      .then((rows) => {
-        if (active) setData(Array.isArray(rows) ? rows : []);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const load = () =>
+      fetch(url, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((rows) => {
+          if (active) setData(Array.isArray(rows) ? rows : []);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    load();
+    // Optional: keep the list fresh so new or changed items show up without a manual reload.
+    const timer = refreshMs ? setInterval(load, refreshMs) : null;
+    const onVisible = () => {
+      if (refreshMs && document.visibilityState === "visible") load();
+    };
+    if (refreshMs) document.addEventListener("visibilitychange", onVisible);
     return () => {
       active = false;
+      if (timer) clearInterval(timer);
+      if (refreshMs) document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [url]);
+  }, [url, refreshMs]);
 
   return { data, loading };
 }
@@ -108,7 +118,7 @@ export function usePricingItems() {
 
 /** Every discount currently live on the site, in display order. */
 export function useDiscounts() {
-  return usePublicList<Discount>("/api/discounts");
+  return usePublicList<Discount>("/api/discounts", 30_000);
 }
 
 /** The discount currently live on the site (first active one in its date range), or null. */
