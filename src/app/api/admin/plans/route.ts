@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       nameAr: body.nameAr,
       nameEn: body.nameEn,
       lessonCount: Number(body.lessonCount) || 0,
-      duration: Number(body.duration) || 30,
+      duration: Number(body.duration) > 0 ? Number(body.duration) : null,
       price: String(body.price ?? "0"),
       currency: body.currency || "USD",
       active: Boolean(body.active),

@@ -25,7 +25,7 @@ type Plan = {
   nameAr: string;
   nameEn: string;
   lessonCount: number;
-  duration: number;
+  duration: number | null;
   price: string;
   currency: string;
   active: boolean;
@@ -50,7 +50,7 @@ const emptyPlan = {
   nameAr: "",
   nameEn: "",
   lessonCount: "8",
-  duration: "30",
+  duration: "",
   price: "0",
   currency: "USD",
   active: true,
@@ -122,7 +122,7 @@ export function ProgramsManager() {
       nameAr: p.nameAr,
       nameEn: p.nameEn,
       lessonCount: String(p.lessonCount),
-      duration: String(p.duration),
+      duration: p.duration ? String(p.duration) : "",
       price: p.price,
       currency: p.currency,
       active: p.active,
@@ -240,7 +240,7 @@ export function ProgramsManager() {
                   <div className="field"><label>الاسم (عربي)</label><input required value={planForm.nameAr} onChange={(e) => setPlanForm({ ...planForm, nameAr: e.target.value })} /></div>
                   <div className="field"><label>Name (English)</label><input required value={planForm.nameEn} onChange={(e) => setPlanForm({ ...planForm, nameEn: e.target.value })} /></div>
                   <div className="field"><label>عدد الحصص</label><input type="number" value={planForm.lessonCount} onChange={(e) => setPlanForm({ ...planForm, lessonCount: e.target.value })} /></div>
-                  <div className="field"><label>مدة الحصة (دقائق)</label><input type="number" value={planForm.duration} onChange={(e) => setPlanForm({ ...planForm, duration: e.target.value })} /></div>
+                  <div className="field"><label>مدة الحصة (دقائق) — اختياري، لو فاضية مش هتظهر</label><input type="number" value={planForm.duration} onChange={(e) => setPlanForm({ ...planForm, duration: e.target.value })} /></div>
                   <div className="field"><label>السعر</label><input type="number" step="0.01" value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })} /></div>
                   <div className="field"><label>العملة</label><input value={planForm.currency} onChange={(e) => setPlanForm({ ...planForm, currency: e.target.value })} /></div>
                   <div className="field"><label className="toggle-row"><input type="checkbox" checked={planForm.active} onChange={(e) => setPlanForm({ ...planForm, active: e.target.checked })} /> ظاهرة في الموقع</label></div>

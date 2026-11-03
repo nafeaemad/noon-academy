@@ -36,7 +36,7 @@ export type DbPlan = {
   nameAr: string;
   nameEn: string;
   lessonCount: number;
-  duration: number;
+  duration: number | null;
   price: string;
   currency: string;
 };

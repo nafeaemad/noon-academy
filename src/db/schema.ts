@@ -178,7 +178,7 @@ export const plans = pgTable("plans", {
   nameAr: varchar("name_ar", { length: 120 }).notNull(),
   nameEn: varchar("name_en", { length: 120 }).notNull(),
   lessonCount: integer("lesson_count").notNull(),
-  duration: integer("duration").notNull(),
+  duration: integer("duration"),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 8 }).notNull().default("USD"),
   active: boolean("active").notNull().default(true),

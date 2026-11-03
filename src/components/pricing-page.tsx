@@ -84,11 +84,13 @@ export function PricingPage() {
                       <small style={{ fontSize: 11 }}>{i ? " / " + (isArabic ? "شهر" : "month") : ""}</small>
                     </div>
                     <p>
-                      {x.lessonCount} {isArabic ? "حصة" : "lessons"} · {x.duration} {isArabic ? "دقيقة" : "min"}
+                      {x.lessonCount} {isArabic ? "حصة" : "lessons"}
+                      {x.duration ? ` · ${x.duration} ${isArabic ? "دقيقة" : "min"}` : ""}
                     </p>
                     <ul>
                       <li>
-                        {x.lessonCount} {isArabic ? "حصة" : "lessons"} · {x.duration} {isArabic ? "دقيقة" : "minutes"}
+                        {x.lessonCount} {isArabic ? "حصة" : "lessons"}
+                        {x.duration ? ` · ${x.duration} ${isArabic ? "دقيقة" : "minutes"}` : ""}
                       </li>
                       <li>{isArabic ? "حصة مباشرة فردية" : "Live one-to-one lesson"}</li>
                       <li>{isArabic ? "خطة ومتابعة شخصية" : "Personal plan & follow-up"}</li>
