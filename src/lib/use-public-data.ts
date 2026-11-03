@@ -106,6 +106,11 @@ export function usePricingItems() {
   return usePublicList<DbPricingItem>("/api/pricing");
 }
 
+/** Every discount currently live on the site, in display order. */
+export function useDiscounts() {
+  return usePublicList<Discount>("/api/discounts");
+}
+
 /** The discount currently live on the site (first active one in its date range), or null. */
 export function useDiscount() {
   const { data, loading } = usePublicList<Discount>("/api/discounts");

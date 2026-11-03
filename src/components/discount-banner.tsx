@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useLanguage } from "./language-provider";
-import { useDiscount } from "@/lib/use-public-data";
+import { useDiscounts } from "@/lib/use-public-data";
 import { discountBadge, type Discount } from "@/lib/discount";
 
 function useCountdown(endsAt: string | null) {
@@ -21,7 +21,7 @@ function useCountdown(endsAt: string | null) {
 }
 
 /** The visual offer card. Also used for the live preview in the admin panel. */
-export function DiscountView({ d, isArabic, onClose, cta = true }: { d: Pick<Discount, "type" | "value" | "labelAr" | "labelEn" | "messageAr" | "messageEn" | "endsAt">; isArabic: boolean; onClose?: () => void; cta?: boolean }) {
+export function DiscountView({ d, isArabic, cta = true }: { d: Pick<Discount, "type" | "value" | "labelAr" | "labelEn" | "messageAr" | "messageEn" | "endsAt">; isArabic: boolean; cta?: boolean }) {
   const left = useCountdown(d.endsAt);
   const label = (isArabic ? d.labelAr : d.labelEn) || d.labelAr || d.labelEn;
   const message = (isArabic ? d.messageAr : d.messageEn) || d.messageAr || d.messageEn;
@@ -63,21 +63,36 @@ export function DiscountView({ d, isArabic, onClose, cta = true }: { d: Pick<Dis
           </Link>
         )}
       </div>
-      {onClose && (
-        <button className="discount-close" onClick={onClose} aria-label="close">
-          <X size={16} />
-        </button>
-      )}
     </div>
   );
 }
 
+const ROTATE_MS = 6000;
+
+/** Always visible. With several live discounts, they take turns (fade) every few seconds. */
 export function DiscountBanner() {
   const { isArabic } = useLanguage();
-  const { discount } = useDiscount();
+  const { data: list } = useDiscounts();
   const pathname = usePathname();
-  const [closed, setClosed] = useState(false);
-  if (!discount || closed) return null;
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (list.length < 2) return;
+    const t = setInterval(() => setI((n) => n + 1), ROTATE_MS);
+    return () => clearInterval(t);
+  }, [list.length]);
+  if (!list.length) return null;
   if (pathname.startsWith("/admin") || pathname.startsWith("/teacher")) return null;
-  return <DiscountView d={discount} isArabic={isArabic} onClose={() => setClosed(true)} />;
+  const d = list[i % list.length];
+  return (
+    <div key={d.id} className={list.length > 1 ? "discount-fade" : undefined}>
+      <DiscountView d={d} isArabic={isArabic} />
+      {list.length > 1 && (
+        <div className="discount-dots" aria-hidden>
+          {list.map((x, n) => (
+            <i key={x.id} className={n === i % list.length ? "on" : ""} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
