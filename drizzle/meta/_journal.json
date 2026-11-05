@@ -134,6 +134,13 @@
       "when": 1793666194393,
       "tag": "0018_natural_solo",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793668017877,
+      "tag": "0019_salty_sunspot",
+      "breakpoints": true
     }
   ]
 }

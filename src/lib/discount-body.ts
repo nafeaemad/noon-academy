@@ -5,9 +5,12 @@ export function discountValues(body: Record<string, unknown>) {
     const d = new Date(String(v));
     return Number.isNaN(d.getTime()) ? null : d;
   };
+  const ids = (v: unknown) => (Array.isArray(v) ? v.map(Number).filter((n) => Number.isInteger(n) && n > 0) : []);
   const type = body.type === "fixed" ? "fixed" : "percent";
   let value = Math.max(0, Number(body.value) || 0);
   if (type === "percent") value = Math.min(value, 100);
+  const scope = body.scope === "selected" ? "selected" : "all";
+  const t = (body.targets ?? {}) as Record<string, unknown>;
   return {
     type,
     value: String(value),
@@ -17,6 +20,8 @@ export function discountValues(body: Record<string, unknown>) {
     messageEn: s(body.messageEn, 1000),
     startsAt: date(body.startsAt),
     endsAt: date(body.endsAt),
+    scope,
+    targets: scope === "selected" ? { programs: ids(t.programs), plans: ids(t.plans), items: ids(t.items) } : null,
     sort: Number(body.sort) || 0,
     active: body.active !== false,
   };

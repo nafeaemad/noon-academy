@@ -58,7 +58,7 @@ export function DiscountView({ d, isArabic, cta = true }: { d: Pick<Discount, "t
           </div>
         )}
         {cta && (
-          <Link href="/booking" className="discount-cta">
+          <Link href={`/booking${"id" in d ? `?discount=${(d as { id: number }).id}` : ""}`} className="discount-cta">
             {isArabic ? "احجز واستفد من الخصم" : "Book & save"}
           </Link>
         )}

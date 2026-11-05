@@ -8,7 +8,11 @@ export type Discount = {
   messageEn: string;
   startsAt: string | null;
   endsAt: string | null;
+  scope?: "all" | "selected";
+  targets?: Partial<DiscountTargets> | null;
 };
+
+export type DiscountTargets = { programs: number[]; plans: number[]; items: number[] };
 
 /** Price after the discount (never below zero). */
 export function discounted(price: number, d: Pick<Discount, "type" | "value"> | null | undefined): number {
@@ -51,8 +55,8 @@ export function itemRule(item: ItemWithDiscount | null | undefined, source: "pro
 }
 
 /** The site-wide discount as a rule. */
-export function siteRule(d: Pick<Discount, "type" | "value" | "endsAt"> | null | undefined): DiscountRule | null {
-  return d ? { type: d.type, value: d.value, endsAt: d.endsAt, source: "site" } : null;
+export function siteRule(d: (Pick<Discount, "type" | "value" | "endsAt"> & { labelAr?: string; labelEn?: string }) | null | undefined): DiscountRule | null {
+  return d ? { type: d.type, value: d.value, endsAt: d.endsAt, noteAr: d.labelAr || null, noteEn: d.labelEn || d.labelAr || null, source: "site" } : null;
 }
 
 function live(r: DiscountRule | null | undefined, now: number): r is DiscountRule {
@@ -83,3 +87,22 @@ export function formatMoney(n: number, currency: string) {
 }
 
 export const ruleBadge = (r: DiscountRule, currency = "USD") => discountBadge({ type: r.type as "percent" | "fixed", value: String(r.value) }, currency);
+
+type Scoped = { scope?: string | null; targets?: Partial<DiscountTargets> | null };
+
+/** Does this offer cover one program / plan / pricing-table item? "all" covers everything. */
+export function appliesTo(d: Scoped, kind: keyof DiscountTargets, id: number): boolean {
+  if (!d.scope || d.scope === "all") return true;
+  return !!d.targets?.[kind]?.includes(id);
+}
+
+/** For a booking: covered when the offer is for all, or lists the booked program or the chosen plan. */
+export function appliesToBooking(d: Scoped, programId: number | null | undefined, planId: number | null | undefined): boolean {
+  if (!d.scope || d.scope === "all") return true;
+  return (!!programId && !!d.targets?.programs?.includes(programId)) || (!!planId && !!d.targets?.plans?.includes(planId));
+}
+
+/** Site-wide offers (as rules) that cover the given item. */
+export function rulesFor(list: (Discount & Scoped)[], kind: keyof DiscountTargets, id: number): DiscountRule[] {
+  return list.filter((d) => appliesTo(d, kind, id)).map((d) => siteRule(d)!);
+}

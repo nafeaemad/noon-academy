@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
-import { usePlans, usePricingItems, useDiscount } from "@/lib/use-public-data";
-import { itemRule, siteRule, pickBest, ruleBadge, isLive, type DiscountRule } from "@/lib/discount";
+import { usePlans, usePricingItems, useDiscounts } from "@/lib/use-public-data";
+import { itemRule, siteRule, pickBest, ruleBadge, isLive, rulesFor, type DiscountRule } from "@/lib/discount";
 
 function formatPrice(price: string, currency: string) {
   const n = Number(price);
@@ -13,10 +13,10 @@ function formatPrice(price: string, currency: string) {
 }
 
 export function PricingPage() {
-  const { discount } = useDiscount();
+  const { data: allDiscounts } = useDiscounts();
   // Shows "$56" or, when a discount applies (site-wide or the item's own, whichever saves more), "<old> <new> [-20%]".
-  const priceView = (price: string, currency: string, own?: DiscountRule | null) => {
-    const best = pickBest(Number(price), [siteRule(discount), own]);
+  const priceView = (price: string, currency: string, own: DiscountRule | null, scoped: DiscountRule[]) => {
+    const best = pickBest(Number(price), [...scoped, own]);
     if (!best) return formatPrice(price, currency);
     return (
       <>
@@ -60,7 +60,7 @@ export function PricingPage() {
                       <td>{isArabic ? r.titleAr : r.titleEn}</td>
                       <td>{isArabic ? r.col2Ar : r.col2En}</td>
                       <td>
-                        {priceView(r.price, r.currency)} {isArabic ? r.unitAr : r.unitEn}
+                        {priceView(r.price, r.currency, null, rulesFor(allDiscounts, "items", r.id))} {isArabic ? r.unitAr : r.unitEn}
                       </td>
                     </tr>
                   ))}
@@ -74,7 +74,7 @@ export function PricingPage() {
               <h3>{isArabic ? c.titleAr : c.titleEn}</h3>
               {(isArabic ? c.descAr : c.descEn) && <p style={{ margin: "6px 0 12px" }}>{isArabic ? c.descAr : c.descEn}</p>}
               <div className="price">
-                {priceView(c.price, c.currency)}
+                {priceView(c.price, c.currency, null, rulesFor(allDiscounts, "items", c.id))}
                 <small style={{ fontSize: 11 }}> {isArabic ? c.unitAr : c.unitEn}</small>
               </div>
               <p>{isArabic ? c.col2Ar : c.col2En}</p>
@@ -94,7 +94,7 @@ export function PricingPage() {
                     {featured && <span className="badge">{isArabic ? "الأكثر اختيارًا" : "MOST POPULAR"}</span>}
                     <h3>{isArabic ? x.nameAr : x.nameEn}</h3>
                     <div className="price">
-                      {priceView(x.price, x.currency, itemRule(x, "plan"))}
+                      {priceView(x.price, x.currency, itemRule(x, "plan"), rulesFor(allDiscounts, "plans", x.id))}
                       {(() => {
                         const own = itemRule(x, "plan");
                         const note = isArabic ? x.discountNoteAr : x.discountNoteEn;

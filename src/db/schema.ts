@@ -302,6 +302,9 @@ export const discounts = pgTable("discounts", {
   messageEn: text("message_en").notNull().default(""),
   startsAt: timestamp("starts_at", { withTimezone: true }),
   endsAt: timestamp("ends_at", { withTimezone: true }),
+  // "all" = every program/plan/price; "selected" = only the ids listed in targets.
+  scope: varchar("scope", { length: 10 }).notNull().default("all"),
+  targets: jsonb("targets").$type<{ programs: number[]; plans: number[]; items: number[] }>(),
   sort: integer("sort").notNull().default(0),
   active: boolean("active").notNull().default(true),
 });

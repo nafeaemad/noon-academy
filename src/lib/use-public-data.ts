@@ -120,9 +120,3 @@ export function usePricingItems() {
 export function useDiscounts() {
   return usePublicList<Discount>("/api/discounts", 30_000);
 }
-
-/** The discount currently live on the site (first active one in its date range), or null. */
-export function useDiscount() {
-  const { data, loading } = usePublicList<Discount>("/api/discounts");
-  return { discount: data[0] ?? null, loading };
-}

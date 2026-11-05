@@ -6,6 +6,10 @@ import { toast } from "@/components/toast-provider";
 import { DiscountView } from "@/components/discount-banner";
 import { discountBadge } from "@/lib/discount";
 
+type Targets = { programs: number[]; plans: number[]; items: number[] };
+type Opt = { id: number; label: string };
+const noTargets: Targets = { programs: [], plans: [], items: [] };
+
 type Row = {
   id: number;
   type: "percent" | "fixed";
@@ -16,6 +20,8 @@ type Row = {
   messageEn: string;
   startsAt: string | null;
   endsAt: string | null;
+  scope: "all" | "selected";
+  targets: Targets | null;
   sort: number;
   active: boolean;
 };
@@ -29,6 +35,8 @@ const emptyForm = {
   messageEn: "",
   startsAt: "",
   endsAt: "",
+  scope: "all" as "all" | "selected",
+  targets: noTargets,
   sort: 0,
   active: true,
 };
@@ -47,16 +55,27 @@ export function DiscountsManager() {
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [opts, setOpts] = useState<{ programs: Opt[]; plans: Opt[]; items: Opt[] }>({ programs: [], plans: [], items: [] });
 
   function load() {
     fetch("/api/admin/discounts").then((r) => r.json()).then((d) => setRows(Array.isArray(d) ? d : []));
   }
   useEffect(load, []);
+  useEffect(() => {
+    const get = (u: string) => fetch(u).then((r) => r.json()).then((d) => (Array.isArray(d) ? d : [])).catch(() => []);
+    Promise.all([get("/api/admin/programs"), get("/api/admin/plans"), get("/api/admin/pricing")]).then(([pr, pl, it]) =>
+      setOpts({
+        programs: pr.map((x: { id: number; titleAr: string }) => ({ id: x.id, label: x.titleAr })),
+        plans: pl.map((x: { id: number; nameAr: string }) => ({ id: x.id, label: x.nameAr })),
+        items: it.map((x: { id: number; titleAr: string }) => ({ id: x.id, label: x.titleAr })),
+      }),
+    );
+  }, []);
 
   const set = (patch: Partial<typeof form>) => setForm({ ...form, ...patch });
 
   function startEdit(r: Row) {
-    setForm({ ...r, startsAt: toLocalInput(r.startsAt), endsAt: toLocalInput(r.endsAt) });
+    setForm({ ...r, scope: r.scope ?? "all", targets: { ...noTargets, ...(r.targets ?? {}) }, startsAt: toLocalInput(r.startsAt), endsAt: toLocalInput(r.endsAt) });
     setEditing(r.id);
   }
 
@@ -151,6 +170,35 @@ export function DiscountsManager() {
               <div className="field"><label className="toggle-row"><input type="checkbox" checked={form.active} onChange={(e) => set({ active: e.target.checked })} /> مفعّل</label></div>
             </div>
 
+            <div className="field" style={{ marginTop: 12 }}>
+              <label>بيتطبق على إيه؟</label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button type="button" className="btn-mini" style={form.scope === "all" ? { background: "var(--green)", color: "#fff" } : undefined} onClick={() => set({ scope: "all" })}>الكل (كل البرامج والأسعار)</button>
+                <button type="button" className="btn-mini" style={form.scope === "selected" ? { background: "var(--green)", color: "#fff" } : undefined} onClick={() => set({ scope: "selected" })}>اختيار محدد</button>
+              </div>
+            </div>
+            {form.scope === "selected" && (
+              <div className="admin-panel" style={{ marginTop: 10, background: "#fbfaf6" }}>
+                {([["programs", "البرامج"], ["plans", "خطط الأسعار"], ["items", "أسطر وكورسات صفحة الأسعار"]] as const).map(([k, title]) => (
+                  <div key={k} style={{ marginBottom: 10 }}>
+                    <strong style={{ fontSize: 13 }}>{title}</strong>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                      {opts[k].length === 0 && <span className="form-note">مفيش عناصر.</span>}
+                      {opts[k].map((o) => {
+                        const on = form.targets[k].includes(o.id);
+                        return (
+                          <label key={o.id} className="toggle-row" style={{ border: "1px solid #d9d2bf", borderRadius: 20, padding: "5px 12px", background: on ? "#e9f4ee" : "#fff" }}>
+                            <input type="checkbox" checked={on} onChange={() => set({ targets: { ...form.targets, [k]: on ? form.targets[k].filter((x) => x !== o.id) : [...form.targets[k], o.id] } })} /> {o.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <p className="form-note">العميل لما يضغط على الخصم ده في البانر هيشوف العناصر اللي اخترتها. اختار برنامج أو خطة واحدة على الأقل.</p>
+              </div>
+            )}
+
             <p className="form-note" style={{ marginTop: 14 }}>معاينة الشكل اللي هيظهر للزوار:</p>
             <div style={{ borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
               <DiscountView
@@ -171,13 +219,14 @@ export function DiscountsManager() {
           ) : (
             <table className="admin-table">
               <thead>
-                <tr><th>الخصم</th><th>العنوان</th><th>الفترة</th><th>الحالة</th><th></th></tr>
+                <tr><th>الخصم</th><th>العنوان</th><th>بيتطبق على</th><th>الفترة</th><th>الحالة</th><th></th></tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id}>
                     <td><strong style={{ direction: "ltr", display: "inline-block" }}>{discountBadge(r)}</strong></td>
                     <td>{r.labelAr || "—"}</td>
+                    <td style={{ fontSize: 12 }}>{r.scope === "selected" ? `${(r.targets?.programs.length ?? 0)} برنامج · ${(r.targets?.plans.length ?? 0)} خطة · ${(r.targets?.items.length ?? 0)} سطر` : "الكل"}</td>
                     <td style={{ fontSize: 12 }}>
                       {r.startsAt ? new Date(r.startsAt).toLocaleString("ar-EG") : "من الآن"} ← {r.endsAt ? new Date(r.endsAt).toLocaleString("ar-EG") : "مفتوح"}
                     </td>

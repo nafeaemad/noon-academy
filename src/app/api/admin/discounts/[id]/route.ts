@@ -10,6 +10,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (denied) return denied;
   const { id } = await params;
   const v = discountValues(await req.json());
+  if (v.scope === "selected" && !v.targets!.programs.length && !v.targets!.plans.length && !v.targets!.items.length) {
+    return NextResponse.json({ error: "اختار برنامج أو خطة واحدة على الأقل، أو خلّي الخصم على الكل." }, { status: 400 });
+  }
   if (!(Number(v.value) > 0)) return NextResponse.json({ error: "اكتب قيمة الخصم." }, { status: 400 });
   const [row] = await db.update(discounts).set(v).where(eq(discounts.id, Number(id))).returning();
   return NextResponse.json(row);

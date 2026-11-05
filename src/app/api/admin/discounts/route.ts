@@ -15,6 +15,9 @@ export async function POST(req: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
   const v = discountValues(await req.json());
+  if (v.scope === "selected" && !v.targets!.programs.length && !v.targets!.plans.length && !v.targets!.items.length) {
+    return NextResponse.json({ error: "اختار برنامج أو خطة واحدة على الأقل، أو خلّي الخصم على الكل." }, { status: 400 });
+  }
   if (!(Number(v.value) > 0)) return NextResponse.json({ error: "اكتب قيمة الخصم." }, { status: 400 });
   const [row] = await db.insert(discounts).values(v).returning();
   return NextResponse.json(row);
