@@ -6,7 +6,7 @@ import { useState } from "react";
 import { faqs, t } from "@/lib/content";
 import { useLanguage } from "./language-provider";
 import { usePrograms, useTeachers, useDiscounts, usePlans } from "@/lib/use-public-data";
-import { itemRule, pickBest, ruleBadge, rulesFor } from "@/lib/discount";
+import { itemRule, pickWithPriority, ruleBadge, rulesFor } from "@/lib/discount";
 import { useEditableText, useEditableBilingual } from "./content-provider";
 import { useSiteSettings } from "@/lib/use-site-settings";
 
@@ -21,7 +21,7 @@ export function HomePage() {
  const { data: plansData } = usePlans();
  // Programs have no price of their own: compare their discounts on the average plan price.
  const refPrice = plansData.length ? plansData.reduce((a, x) => a + Number(x.price), 0) / plansData.length : 100;
- const offerFor = (p: (typeof programs)[number]) => pickBest(refPrice, [itemRule(p, "program"), ...rulesFor(allDiscounts, "programs", p.id)]);
+ const offerFor = (p: (typeof programs)[number]) => pickWithPriority(refPrice, [itemRule(p, "program")], rulesFor(allDiscounts, "programs", p.id));
  const { data: teachers } = useTeachers();
  const siteSettings = useSiteSettings();
  const heroEyebrow = useEditableText("home-hero.eyebrow", "تعليم القرآن لغير الناطقين بالعربية", "Quran learning for non-Arabic speakers");

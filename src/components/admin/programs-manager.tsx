@@ -69,8 +69,8 @@ const emptyPlan = {
   active: true,
 };
 
-export function ProgramsManager() {
-  const [tab, setTab] = useState<"programs" | "plans">("programs");
+export function ProgramsManager({ initialTab = "programs" }: { initialTab?: "programs" | "plans" }) {
+  const [tab, setTab] = useState<"programs" | "plans">(initialTab);
 
   const [programs, setPrograms] = useState<Program[] | null>(null);
   const [editingProgram, setEditingProgram] = useState<number | "new" | null>(null);

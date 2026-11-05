@@ -81,6 +81,15 @@ export function pickBest(price: number, rules: (DiscountRule | null | undefined)
   return best;
 }
 
+/**
+ * A discount typed in on the program/plan itself wins over site offers: when any of the item's own
+ * discounts is live, only those compete; otherwise the offers from the Discounts page do.
+ */
+export function pickWithPriority(price: number, own: (DiscountRule | null | undefined)[], general: (DiscountRule | null | undefined)[], now = Date.now()) {
+  const ownLive = own.filter((r) => live(r, now));
+  return pickBest(price, ownLive.length ? ownLive : general, now);
+}
+
 export function formatMoney(n: number, currency: string) {
   const v = Number.isInteger(n) ? String(n) : n.toFixed(2);
   return currency === "USD" ? `$${v}` : `${v} ${currency}`;

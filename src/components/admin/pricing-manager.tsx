@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "@/components/toast-provider";
+
+type PlanRow = { id: number; nameAr: string; lessonCount: number; duration: number | null; price: string; currency: string; active: boolean };
 
 type Item = {
   id: number;
@@ -39,12 +42,14 @@ const empty = (kind: "row" | "course") => ({
 
 export function PricingManager() {
   const [items, setItems] = useState<Item[] | null>(null);
+  const [plans, setPlans] = useState<PlanRow[]>([]);
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [form, setForm] = useState(empty("row"));
   const [saving, setSaving] = useState(false);
 
   function load() {
     fetch("/api/admin/pricing").then((r) => r.json()).then((d) => setItems(Array.isArray(d) ? d : []));
+    fetch("/api/admin/plans").then((r) => r.json()).then((d) => setPlans(Array.isArray(d) ? d : []));
   }
   useEffect(load, []);
 
@@ -84,6 +89,13 @@ export function PricingManager() {
     load();
   }
 
+  async function removePlan(p: PlanRow) {
+    if (!confirm(`حذف الخطة "${p.nameAr}"؟`)) return;
+    await fetch(`/api/admin/plans/${p.id}`, { method: "DELETE" });
+    toast({ type: "success", title: "تم الحذف" });
+    load();
+  }
+
   const isCourse = form.kind === "course";
   const set = (patch: Partial<typeof form>) => setForm({ ...form, ...patch });
 
@@ -99,10 +111,11 @@ export function PricingManager() {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button className="button button-primary" onClick={() => startNew("row")}><Plus size={16} /> إضافة سطر للجدول</button>
               <button className="button button-outline" onClick={() => startNew("course")}><Plus size={16} /> إضافة كورس</button>
+              <Link className="button button-outline" href="/admin/programs?tab=plans"><Plus size={16} /> إضافة خطة أسعار</Link>
             </div>
           )}
         </div>
-        <p className="form-note">الأسطر بتظهر في جدول الأسعار، والكورسات بتظهر في كروت مميزة تحت الجدول. الترتيب بالرقم (الأصغر الأول).</p>
+        <p className="form-note">الأسطر وخطط الأسعار كلها بتظهر جوة جدول الأسعار (تعديل الخطة بيفتح صفحة الخطط). الكورسات بتظهر في كروت مميزة تحت الجدول. الترتيب بالرقم (الأصغر الأول).</p>
 
         {editing !== null && (
           <form className="admin-panel" onSubmit={submit}>
@@ -137,7 +150,7 @@ export function PricingManager() {
         <div className="admin-panel admin-table-wrap">
           {items === null ? (
             <p className="form-note">جاري التحميل...</p>
-          ) : items.length === 0 ? (
+          ) : items.length + plans.length === 0 ? (
             <p className="form-note">مفيش أسعار لسه. اضغط «إضافة سطر للجدول».</p>
           ) : (
             <table className="admin-table">
@@ -156,6 +169,20 @@ export function PricingManager() {
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button className="btn-mini" onClick={() => startEdit(i)}><Pencil size={14} /></button>{" "}
                       <button className="btn-mini" onClick={() => remove(i)}><Trash2 size={14} /></button>
+                    </td>
+                  </tr>
+                ))}
+                {plans.map((p) => (
+                  <tr key={`plan-${p.id}`}>
+                    <td>خطة</td>
+                    <td>{p.nameAr}</td>
+                    <td>{p.lessonCount} حصة{p.duration ? ` · ${p.duration} دقيقة` : ""}</td>
+                    <td>{Number(p.price)} {p.currency}</td>
+                    <td>—</td>
+                    <td>{p.active ? "ظاهر" : "مخفي"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <Link className="btn-mini" href="/admin/programs?tab=plans"><Pencil size={14} /></Link>{" "}
+                      <button className="btn-mini" onClick={() => removePlan(p)}><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 ))}

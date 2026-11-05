@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
 import { usePlans, usePricingItems, useDiscounts } from "@/lib/use-public-data";
-import { itemRule, siteRule, pickBest, ruleBadge, isLive, rulesFor, type DiscountRule } from "@/lib/discount";
+import { itemRule, pickWithPriority, ruleBadge, isLive, rulesFor, type DiscountRule } from "@/lib/discount";
 
 function formatPrice(price: string, currency: string) {
   const n = Number(price);
@@ -14,14 +14,15 @@ function formatPrice(price: string, currency: string) {
 
 export function PricingPage() {
   const { data: allDiscounts } = useDiscounts();
-  // Shows "$56" or, when a discount applies (site-wide or the item's own, whichever saves more), "<old> <new> [-20%]".
-  const priceView = (price: string, currency: string, own: DiscountRule | null, scoped: DiscountRule[]) => {
-    const best = pickBest(Number(price), [...scoped, own]);
-    if (!best) return formatPrice(price, currency);
+  // "$56", or when a discount applies: "<old> <new> <unit> [-20%]". The item's own discount beats site offers.
+  const priceView = (price: string, currency: string, own: DiscountRule | null, scoped: DiscountRule[], unit = "") => {
+    const best = pickWithPriority(Number(price), [own], scoped);
+    if (!best) return <>{formatPrice(price, currency)}{unit && <span className="price-unit"> {unit}</span>}</>;
     return (
       <>
         <span className="price-old">{formatPrice(price, currency)}</span>
         <span className="price-new">{formatPrice(String(best.final), currency)}</span>
+        {unit && <span className="price-unit">{unit}</span>}
         <span className="price-off">{ruleBadge(best.rule, currency)}</span>
       </>
     );
@@ -44,10 +45,10 @@ export function PricingPage() {
       />
       <section className="page-content">
         <div className="container">
-          {rows.length > 0 && (
+          {rows.length + plans.length > 0 && (
             <p className="price-table-note">{isArabic ? "مدة الحلقة 30 دقيقة" : "Each lesson is 30 minutes"}</p>
           )}
-          {rows.length > 0 && (
+          {rows.length + plans.length > 0 && (
             <div className="price-table-wrap">
               <table className="price-table">
                 <thead>
@@ -59,14 +60,29 @@ export function PricingPage() {
                 </thead>
                 <tbody>
                   {rows.map((r) => (
-                    <tr key={r.id}>
+                    <tr key={`row-${r.id}`}>
                       <td>{isArabic ? r.titleAr : r.titleEn}</td>
                       <td>{isArabic ? r.col2Ar : r.col2En}</td>
-                      <td>
-                        {priceView(r.price, r.currency, null, rulesFor(allDiscounts, "items", r.id))} {isArabic ? r.unitAr : r.unitEn}
-                      </td>
+                      <td>{priceView(r.price, r.currency, null, rulesFor(allDiscounts, "items", r.id), isArabic ? r.unitAr : r.unitEn)}</td>
                     </tr>
                   ))}
+                  {plans.map((x) => {
+                    const own = itemRule(x, "plan");
+                    const note = isArabic ? x.discountNoteAr : x.discountNoteEn;
+                    return (
+                      <tr key={`plan-${x.id}`}>
+                        <td>{isArabic ? x.nameAr : x.nameEn}</td>
+                        <td>
+                          {x.lessonCount} {isArabic ? "حصة" : "lessons"}
+                          {x.duration ? ` · ${x.duration} ${isArabic ? "دقيقة" : "min"}` : ""}
+                        </td>
+                        <td>
+                          {priceView(x.price, x.currency, own, rulesFor(allDiscounts, "plans", x.id))}
+                          {isLive(own) && note ? <div><span className="price-note">🎁 {note}</span></div> : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -77,8 +93,7 @@ export function PricingPage() {
               <h3>{isArabic ? c.titleAr : c.titleEn}</h3>
               {(isArabic ? c.descAr : c.descEn) && <p style={{ margin: "6px 0 12px" }}>{isArabic ? c.descAr : c.descEn}</p>}
               <div className="price">
-                {priceView(c.price, c.currency, null, rulesFor(allDiscounts, "items", c.id))}
-                <small style={{ fontSize: 11 }}> {isArabic ? c.unitAr : c.unitEn}</small>
+                {priceView(c.price, c.currency, null, rulesFor(allDiscounts, "items", c.id), isArabic ? c.unitAr : c.unitEn)}
               </div>
               <p>{isArabic ? c.col2Ar : c.col2En}</p>
               <Link href="/booking" className="button button-primary" style={{ width: "100%" }}>
@@ -88,44 +103,7 @@ export function PricingPage() {
             </article>
           ))}
 
-          {plans.length ? (
-            <div className="price-grid">
-              {plans.map((x, i) => {
-                const featured = plans.length > 1 && i === 1;
-                return (
-                  <article key={x.id} className={`price-card ${featured ? "featured" : ""}`}>
-                    {featured && <span className="badge">{isArabic ? "الأكثر اختيارًا" : "MOST POPULAR"}</span>}
-                    <h3>{isArabic ? x.nameAr : x.nameEn}</h3>
-                    <div className="price">
-                      {priceView(x.price, x.currency, itemRule(x, "plan"), rulesFor(allDiscounts, "plans", x.id))}
-                      {(() => {
-                        const own = itemRule(x, "plan");
-                        const note = isArabic ? x.discountNoteAr : x.discountNoteEn;
-                        return isLive(own) && note ? <span className="price-note">🎁 {note}</span> : null;
-                      })()}
-                      <small style={{ fontSize: 11 }}>{i ? " / " + (isArabic ? "شهر" : "month") : ""}</small>
-                    </div>
-                    <p>
-                      {x.lessonCount} {isArabic ? "حصة" : "lessons"}
-                      {x.duration ? ` · ${x.duration} ${isArabic ? "دقيقة" : "min"}` : ""}
-                    </p>
-                    <ul>
-                      <li>
-                        {x.lessonCount} {isArabic ? "حصة" : "lessons"}
-                        {x.duration ? ` · ${x.duration} ${isArabic ? "دقيقة" : "minutes"}` : ""}
-                      </li>
-                      <li>{isArabic ? "حصة مباشرة فردية" : "Live one-to-one lesson"}</li>
-                      <li>{isArabic ? "خطة ومتابعة شخصية" : "Personal plan & follow-up"}</li>
-                    </ul>
-                    <Link href="/booking" className={`button ${featured ? "button-primary" : "button-outline"}`} style={{ width: "100%" }}>
-                      <Check />
-                      {isArabic ? "احجز الآن" : "Book now"}
-                    </Link>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
+          {rows.length + plans.length + courses.length === 0 && (
             <div className="empty-reviews">
               <h3>{isArabic ? "الخطط قيد التجهيز" : "Plans coming soon"}</h3>
               <p>{isArabic ? "يمكنك حجز تقييم مجاني الآن وسنرشح لك الخطة المناسبة." : "Book a free assessment now and we will recommend the right plan."}</p>

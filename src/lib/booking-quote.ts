@@ -1,7 +1,7 @@
 import { and, asc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import { discounts, plans, programs } from "@/db/schema";
-import { appliesToBooking, itemRule, pickBest, ruleBadge, siteRule } from "@/lib/discount";
+import { appliesToBooking, itemRule, pickWithPriority, ruleBadge, siteRule } from "@/lib/discount";
 
 export type BookingQuote = {
   planId: number;
@@ -35,7 +35,7 @@ export async function quoteBooking(programTitleEn: string, planId: number | null
     .map((d) => siteRule({ type: d.type as "percent" | "fixed", value: d.value, endsAt: d.endsAt?.toISOString() ?? null }));
 
   const price = Number(plan.price);
-  const best = pickBest(price, [...siteRules, itemRule(program, "program"), itemRule(plan, "plan")]);
+  const best = pickWithPriority(price, [itemRule(program, "program"), itemRule(plan, "plan")], siteRules);
   const final = best ? best.final : price;
   return {
     planId: plan.id,
