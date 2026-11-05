@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { Check } from "lucide-react";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
 import { usePlans, usePricingItems, useDiscounts } from "@/lib/use-public-data";
@@ -45,10 +44,10 @@ export function PricingPage() {
       />
       <section className="page-content">
         <div className="container">
-          {rows.length + plans.length > 0 && (
+          {rows.length + plans.length + courses.length > 0 && (
             <p className="price-table-note">{isArabic ? "مدة الحلقة 30 دقيقة" : "Each lesson is 30 minutes"}</p>
           )}
-          {rows.length + plans.length > 0 && (
+          {rows.length + plans.length + courses.length > 0 && (
             <div className="price-table-wrap">
               <table className="price-table">
                 <thead>
@@ -64,6 +63,16 @@ export function PricingPage() {
                       <td>{isArabic ? r.titleAr : r.titleEn}</td>
                       <td>{isArabic ? r.col2Ar : r.col2En}</td>
                       <td>{priceView(r.price, r.currency, null, rulesFor(allDiscounts, "items", r.id), isArabic ? r.unitAr : r.unitEn)}</td>
+                    </tr>
+                  ))}
+                  {courses.map((c) => (
+                    <tr key={`course-${c.id}`}>
+                      <td>
+                        <strong>{isArabic ? c.titleAr : c.titleEn}</strong>
+                        {(isArabic ? c.descAr : c.descEn) && <div className="price-row-desc">{isArabic ? c.descAr : c.descEn}</div>}
+                      </td>
+                      <td>{isArabic ? c.col2Ar : c.col2En}</td>
+                      <td>{priceView(c.price, c.currency, null, rulesFor(allDiscounts, "items", c.id), isArabic ? c.unitAr : c.unitEn)}</td>
                     </tr>
                   ))}
                   {plans.map((x) => {
@@ -87,21 +96,6 @@ export function PricingPage() {
               </table>
             </div>
           )}
-
-          {courses.map((c) => (
-            <article key={c.id} className="price-card featured quranic-card">
-              <h3>{isArabic ? c.titleAr : c.titleEn}</h3>
-              {(isArabic ? c.descAr : c.descEn) && <p style={{ margin: "6px 0 12px" }}>{isArabic ? c.descAr : c.descEn}</p>}
-              <div className="price">
-                {priceView(c.price, c.currency, null, rulesFor(allDiscounts, "items", c.id), isArabic ? c.unitAr : c.unitEn)}
-              </div>
-              <p>{isArabic ? c.col2Ar : c.col2En}</p>
-              <Link href="/booking" className="button button-primary" style={{ width: "100%" }}>
-                <Check />
-                {isArabic ? "احجز الآن" : "Book now"}
-              </Link>
-            </article>
-          ))}
 
           {rows.length + plans.length + courses.length === 0 && (
             <div className="empty-reviews">

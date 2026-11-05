@@ -168,3 +168,4 @@
 .price-table-note{max-width:760px;margin:0 auto 8px;text-align:center;font-size:12px;color:#7b8a84}
 .price-unit{white-space:nowrap;margin-inline-end:6px;font-size:.8em;opacity:.85}
 .quranic-card .price{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px}
+.price-row-desc{margin-top:4px;font-size:12px;line-height:1.5;color:#6b7a74;font-weight:400}
