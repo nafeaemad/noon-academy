@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useLanguage } from "./language-provider";
 import { PageHero } from "./page-hero";
-import { usePlans, usePricingItems, useDiscounts } from "@/lib/use-public-data";
+import { usePlans, usePricingItems, useDiscounts, usePrograms } from "@/lib/use-public-data";
 import { itemRule, pickWithPriority, ruleBadge, isLive, rulesFor, type DiscountRule } from "@/lib/discount";
 
 function formatPrice(price: string, currency: string) {
@@ -29,6 +29,15 @@ export function PricingPage() {
   const { isArabic } = useLanguage();
   const { data: plans } = usePlans();
   const { data: items } = usePricingItems();
+  const { data: programs } = usePrograms();
+  // A row linked to a program uses that program's own discount first, then offers that cover the program.
+  const itemOffer = (r: { id: number; programId: number | null }) => {
+    const prog = r.programId ? programs.find((p) => p.id === r.programId) : undefined;
+    return {
+      own: prog ? itemRule(prog, "program") : null,
+      scoped: [...rulesFor(allDiscounts, "items", r.id), ...(r.programId ? rulesFor(allDiscounts, "programs", r.programId) : [])],
+    };
+  };
   const rows = items.filter((i) => i.kind === "row");
   const courses = items.filter((i) => i.kind === "course");
   return (
@@ -62,7 +71,7 @@ export function PricingPage() {
                     <tr key={`row-${r.id}`}>
                       <td>{isArabic ? r.titleAr : r.titleEn}</td>
                       <td>{isArabic ? r.col2Ar : r.col2En}</td>
-                      <td>{priceView(r.price, r.currency, null, rulesFor(allDiscounts, "items", r.id), isArabic ? r.unitAr : r.unitEn)}</td>
+                      <td>{(() => { const o = itemOffer(r); return priceView(r.price, r.currency, o.own, o.scoped, isArabic ? r.unitAr : r.unitEn); })()}</td>
                     </tr>
                   ))}
                   {courses.map((c) => (
@@ -72,7 +81,17 @@ export function PricingPage() {
                         {(isArabic ? c.descAr : c.descEn) && <div className="price-row-desc">{isArabic ? c.descAr : c.descEn}</div>}
                       </td>
                       <td>{isArabic ? c.col2Ar : c.col2En}</td>
-                      <td>{priceView(c.price, c.currency, null, rulesFor(allDiscounts, "items", c.id), isArabic ? c.unitAr : c.unitEn)}</td>
+                      <td>{(() => {
+                          const o = itemOffer(c);
+                          const prog = c.programId ? programs.find((p) => p.id === c.programId) : undefined;
+                          const note = prog ? (isArabic ? prog.discountNoteAr : prog.discountNoteEn) : null;
+                          return (
+                            <>
+                              {priceView(c.price, c.currency, o.own, o.scoped, isArabic ? c.unitAr : c.unitEn)}
+                              {isLive(o.own) && note ? <div><span className="price-note">🎁 {note}</span></div> : null}
+                            </>
+                          );
+                        })()}</td>
                     </tr>
                   ))}
                   {plans.map((x) => {

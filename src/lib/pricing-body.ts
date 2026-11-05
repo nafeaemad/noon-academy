@@ -12,6 +12,7 @@ export function pricingValues(body: Record<string, unknown>) {
     currency: s(body.currency, 8) || "USD",
     unitAr: s(body.unitAr, 60),
     unitEn: s(body.unitEn, 60),
+    programId: Number(body.programId) > 0 ? Number(body.programId) : null,
     sort: Number(body.sort) || 0,
     active: body.active !== false,
   };

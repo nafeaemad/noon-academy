@@ -20,6 +20,7 @@ type Item = {
   currency: string;
   unitAr: string;
   unitEn: string;
+  programId: number | null;
   sort: number;
   active: boolean;
 };
@@ -36,6 +37,7 @@ const empty = (kind: "row" | "course") => ({
   currency: "USD",
   unitAr: kind === "row" ? "/ شهر" : "/ حصة",
   unitEn: kind === "row" ? "/ Month" : "/ lesson",
+  programId: null as number | null,
   sort: 0,
   active: true,
 });
@@ -43,12 +45,14 @@ const empty = (kind: "row" | "course") => ({
 export function PricingManager() {
   const [items, setItems] = useState<Item[] | null>(null);
   const [plans, setPlans] = useState<PlanRow[]>([]);
+  const [programs, setPrograms] = useState<{ id: number; titleAr: string }[]>([]);
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [form, setForm] = useState(empty("row"));
   const [saving, setSaving] = useState(false);
 
   function load() {
     fetch("/api/admin/pricing").then((r) => r.json()).then((d) => setItems(Array.isArray(d) ? d : []));
+    fetch("/api/admin/programs").then((r) => r.json()).then((d) => setPrograms(Array.isArray(d) ? d : []));
     fetch("/api/admin/plans").then((r) => r.json()).then((d) => setPlans(Array.isArray(d) ? d : []));
   }
   useEffect(load, []);
@@ -136,6 +140,14 @@ export function PricingManager() {
                   <div className="field"><label>Description (English)</label><textarea rows={3} value={form.descEn} onChange={(e) => set({ descEn: e.target.value })} /></div>
                 </>
               )}
+              <div className="field full">
+                <label>مرتبط ببرنامج (اختياري)</label>
+                <select value={form.programId ?? ""} onChange={(e) => set({ programId: e.target.value ? Number(e.target.value) : null })}>
+                  <option value="">غير مرتبط</option>
+                  {programs.map((p) => <option key={p.id} value={p.id}>{p.titleAr}</option>)}
+                </select>
+                <span className="form-note">لو البرنامج عليه خصم خاص بيه، بيتطبق على السطر ده بدل خصم الموقع.</span>
+              </div>
               <div className="field"><label>السعر</label><input required type="number" step="0.01" value={form.price} onChange={(e) => set({ price: e.target.value })} /></div>
               <div className="field"><label>العملة</label><input value={form.currency} onChange={(e) => set({ currency: e.target.value })} /></div>
               <div className="field"><label>الوحدة بعد السعر (عربي)</label><input value={form.unitAr} onChange={(e) => set({ unitAr: e.target.value })} /></div>

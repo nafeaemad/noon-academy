@@ -110,6 +110,7 @@ export type DbPricingItem = {
   currency: string;
   unitAr: string;
   unitEn: string;
+  programId: number | null;
 };
 
 export function usePricingItems() {

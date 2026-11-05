@@ -286,6 +286,8 @@ export const pricingItems = pgTable("pricing_items", {
   currency: varchar("currency", { length: 8 }).notNull().default("USD"),
   unitAr: varchar("unit_ar", { length: 60 }).notNull().default(""),
   unitEn: varchar("unit_en", { length: 60 }).notNull().default(""),
+  // Optional link to a program: that program's own discount (if any) then applies to this row.
+  programId: integer("program_id"),
   sort: integer("sort").notNull().default(0),
   active: boolean("active").notNull().default(true),
 });
