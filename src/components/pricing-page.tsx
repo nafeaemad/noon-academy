@@ -45,6 +45,9 @@ export function PricingPage() {
       <section className="page-content">
         <div className="container">
           {rows.length > 0 && (
+            <p className="price-table-note">{isArabic ? "مدة الحلقة 30 دقيقة" : "Each lesson is 30 minutes"}</p>
+          )}
+          {rows.length > 0 && (
             <div className="price-table-wrap">
               <table className="price-table">
                 <thead>
