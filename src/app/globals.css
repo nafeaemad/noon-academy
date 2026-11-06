@@ -169,3 +169,39 @@
 .price-unit{white-space:nowrap;margin-inline-end:6px;font-size:.8em;opacity:.85}
 .quranic-card .price{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px}
 .price-row-desc{margin-top:4px;font-size:12px;line-height:1.5;color:#6b7a74;font-weight:400}
+
+/* Reviews carousel: stacked cards that flip */
+.rc-wrap{max-width:760px;margin:0 auto 60px;padding:0 4px}
+.rc-stage{position:relative;perspective:1400px;padding:0 14px 26px}
+.rc-back{position:absolute;inset:0 14px 26px;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:0 10px 30px rgba(12,59,46,.08)}
+.rc-back1{transform:translateY(14px) scale(.965);opacity:.85}
+.rc-back2{transform:translateY(26px) scale(.93);opacity:.6}
+.rc-slot{position:relative;display:grid;transform-style:preserve-3d}
+.rc-card{grid-area:1/1;position:relative;overflow:hidden;padding:34px 34px 28px;border-radius:22px;background:linear-gradient(145deg,#ffffff 0%,#fbf7ec 100%);border:1px solid #e6d9b8;box-shadow:0 22px 50px rgba(12,59,46,.16);backface-visibility:hidden;transform-origin:50% 50%}
+.rc-card:before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#c7a76b,#e5c98e)}
+.rc-quote{position:absolute;top:18px;inset-inline-end:22px;width:54px;height:54px;color:#e8d8ab;opacity:.55;fill:#e8d8ab;stroke:none}
+.rc-stars{display:flex;gap:4px;margin-bottom:14px}
+.rc-stars svg{width:18px;height:18px;color:#d6c9a8;fill:#e7dfc8;stroke:none;flex:none}
+.rc-stars svg.on{color:#c49f55;fill:#c49f55}
+.rc-text{position:relative;margin:0 0 22px;font:19px/1.85 Georgia,"Noto Naskh Arabic",serif;color:#1d2f29;white-space:pre-line}
+.rc-who{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rc-avatar{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0c3b2e,#1d6a50);color:#f3e3b3;font:700 18px Georgia,serif;box-shadow:0 6px 14px rgba(12,59,46,.3)}
+.rc-who strong{display:block;font-size:14px;color:#0c3b2e}
+.rc-who small{display:block;font-size:12px;color:var(--muted)}
+.rc-chip{margin-inline-start:auto;padding:5px 12px;border-radius:20px;background:#eef5f0;color:#0c3b2e;font-size:11px;font-weight:700;border:1px solid #cfe3d8}
+.rc-in{animation:rcFlipIn .7s cubic-bezier(.22,.8,.3,1) both}
+.rc-out{animation:rcFlipOut .7s cubic-bezier(.55,.05,.7,.4) both;pointer-events:none}
+@keyframes rcFlipIn{0%{opacity:0;transform:rotateY(-100deg) translateZ(-60px) scale(.94)}55%{opacity:1}100%{opacity:1;transform:rotateY(0) translateZ(0) scale(1)}}
+@keyframes rcFlipOut{0%{opacity:1;transform:rotateY(0) scale(1)}60%{opacity:.6}100%{opacity:0;transform:rotateY(100deg) translateZ(-60px) scale(.94)}}
+.rc-controls{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:6px}
+.rc-controls>button{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid #d9d2bf;background:#fff;color:#0c3b2e;cursor:pointer;transition:.2s}
+.rc-controls>button:hover{background:#0c3b2e;color:#fff;transform:scale(1.08)}
+.rc-dots{display:flex;gap:7px;align-items:center;max-width:60%;flex-wrap:wrap;justify-content:center}
+.rc-dots button{width:9px;height:9px;padding:0;border-radius:50%;border:0;background:#d6cdb4;cursor:pointer;transition:.3s}
+.rc-dots button.on{width:26px;border-radius:6px;background:linear-gradient(90deg,#b08a49,#e5c98e)}
+.rc-progress{height:3px;margin:14px auto 0;max-width:260px;border-radius:3px;background:#ece6d3;overflow:hidden}
+.rc-progress span{display:block;height:100%;width:100%;transform-origin:left;background:linear-gradient(90deg,#b08a49,#e5c98e);animation:rcProgress linear both}
+.rc-progress span.paused{animation-play-state:paused}
+@keyframes rcProgress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(max-width:600px){.rc-card{padding:26px 22px 22px}.rc-text{font-size:16.5px;line-height:1.75}.rc-chip{margin-inline-start:0}}
+@media(prefers-reduced-motion:reduce){.rc-in,.rc-out{animation-duration:.01s}.rc-progress span{animation:none;transform:scaleX(1)}}
