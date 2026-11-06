@@ -5,7 +5,8 @@ import { ArrowUpLeft, ArrowUpRight, BookOpen, CalendarCheck, Check, ChevronDown,
 import { useState } from "react";
 import { faqs, t } from "@/lib/content";
 import { useLanguage } from "./language-provider";
-import { usePrograms, useTeachers, useDiscounts, usePlans } from "@/lib/use-public-data";
+import { usePrograms, useTeachers, useDiscounts, usePlans, useReviews } from "@/lib/use-public-data";
+import { ReviewCarousel } from "./review-carousel";
 import { itemRule, pickWithPriority, ruleBadge, rulesFor } from "@/lib/discount";
 import { useEditableText, useEditableBilingual } from "./content-provider";
 import { useSiteSettings } from "@/lib/use-site-settings";
@@ -18,6 +19,7 @@ export function HomePage() {
  const [faqOpen,setFaqOpen]=useState(0);
  const { data: programs } = usePrograms();
  const { data: allDiscounts } = useDiscounts();
+ const { data: reviewList } = useReviews();
  const { data: plansData } = usePlans();
  // Programs have no price of their own: compare their discounts on the average plan price.
  const refPrice = plansData.length ? plansData.reduce((a, x) => a + Number(x.price), 0) / plansData.length : 100;
@@ -60,7 +62,7 @@ export function HomePage() {
 
   <section className="global-section"><div className="container global-grid"><div><span className="section-label light">{isArabic?"أكاديمية بلا حدود":"A GLOBAL CLASSROOM"}</span><h2>{isArabic?"القرآن يجمعنا، أينما كنا":"Connected by the Quran, wherever we are"}</h2><p>{isArabic?"نستقبل طلبات الطلاب من مختلف أنحاء العالم، وتُعرض مواعيد الحصص تلقائيًا حسب منطقتك الزمنية. ننشر أرقام الدول والطلاب فقط عند توثيقها.":"We welcome learners from around the world, with lesson times shown automatically in your local time zone. Student and country totals are published only when verified."}</p><div className="region-pills"><span>Europe</span><span>North America</span><span>Asia</span><span>Africa</span><span>Oceania</span></div></div><div className="globe-art"><Globe2/><span className="pin p1"><MapPin/></span><span className="pin p2"><MapPin/></span><span className="pin p3"><MapPin/></span></div></div></section>
 
-  <section className="section reviews-home"><div className="container"><div className="section-head centered"><span className="section-label">{isArabic?"تجارب المتعلمين":"LEARNER STORIES"}</span><h2>{isArabic?"الثقة تُبنى بالتجربة":"Trust grows through real experiences"}</h2></div><div className="empty-reviews"><Star/><h3>{isArabic?"ستظهر هنا تجارب موثقة فقط":"Only verified learner stories appear here"}</h3><p>{isArabic?"لم تُنشر تقييمات معتمدة بعد. لا نستخدم آراء أو أسماء وهمية.":"No reviews have been approved yet. We never publish invented quotes or names."}</p><Link href="/reviews" className="button button-outline">{isArabic?"شارك تجربتك":"Share your experience"}</Link></div></div></section>
+  <section className="section reviews-home"><div className="container"><div className="section-head centered"><span className="section-label">{isArabic?"تجارب المتعلمين":"LEARNER STORIES"}</span><h2>{isArabic?"الثقة تُبنى بالتجربة":"Trust grows through real experiences"}</h2></div>{reviewList.length>0?<><ReviewCarousel items={reviewList}/><div style={{textAlign:"center",marginTop:-30}}><Link href="/reviews" className="button button-outline">{isArabic?"كل التجارب وشارك تجربتك":"All stories & share yours"}</Link></div></>:<div className="empty-reviews"><Star/><h3>{isArabic?"ستظهر هنا تجارب موثقة فقط":"Only verified learner stories appear here"}</h3><p>{isArabic?"لم تُنشر تقييمات معتمدة بعد. لا نستخدم آراء أو أسماء وهمية.":"No reviews have been approved yet. We never publish invented quotes or names."}</p><Link href="/reviews" className="button button-outline">{isArabic?"شارك تجربتك":"Share your experience"}</Link></div>}</div></section>
 
   <section id="faq" className="section faq-section"><div className="container faq-grid"><div className="faq-intro"><span className="section-label">{isArabic?"أسئلة شائعة":"COMMON QUESTIONS"}</span><h2>{isArabic?"كل ما تحتاج معرفته قبل أن تبدأ":"Everything you need before you begin"}</h2><p>{isArabic?"لم تجد إجابتك؟ يسعدنا التحدث معك ومساعدتك.":"Still unsure? We would be happy to talk and help."}</p><Link href="/contact" className="text-link">{c.contact}<Arrow/></Link></div><div className="accordion">{faqs.map((f,i)=><button key={i} className={`faq-item ${faqOpen===i?"active":""}`} onClick={()=>setFaqOpen(faqOpen===i?-1:i)}><span>{f.q[locale]}</span><ChevronDown/><p>{f.a[locale]}</p></button>)}</div></div></section>
 

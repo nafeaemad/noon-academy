@@ -121,3 +121,23 @@ export function usePricingItems() {
 export function useDiscounts() {
   return usePublicList<Discount>("/api/discounts", 30_000);
 }
+
+export type PublicReview = { firstName: string; country: string; program: string; category: string; rating: number; content: string };
+
+/** Approved reviews (the API wraps them as { reviews: [...] }). */
+export function useReviews() {
+  const [data, setData] = useState<PublicReview[]>([]);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/reviews", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((x) => {
+        if (active) setData(Array.isArray(x?.reviews) ? x.reviews : []);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  return { data };
+}
